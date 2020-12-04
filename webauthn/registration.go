@@ -65,10 +65,7 @@ func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOptio
 	newSessionData := SessionData{
 		Challenge: base64.RawURLEncoding.EncodeToString(challenge),
 		UserID:    user.WebAuthnID(),
-	}
-
-	if err != nil {
-		return nil, nil, protocol.ErrParsingData.WithDetails("Error packing session data")
+		UserVerification: creationOptions.AuthenticatorSelection.UserVerification,
 	}
 
 	return &response, &newSessionData, nil
@@ -119,7 +116,7 @@ func (webauthn *WebAuthn) CreateCredential(user User, session SessionData, parse
 		return nil, protocol.ErrBadRequest.WithDetails("ID mismatch for User and Session")
 	}
 
-	shouldVerifyUser := webauthn.Config.AuthenticatorSelection.UserVerification == protocol.VerificationRequired
+	shouldVerifyUser := session.UserVerification == protocol.VerificationRequired
 
 	invalidErr := parsedResponse.Verify(session.Challenge, shouldVerifyUser, webauthn.Config.RPID, webauthn.Config.RPOrigin)
 	if invalidErr != nil {
