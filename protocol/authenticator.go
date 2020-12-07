@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-
+	"github.com/duo-labs/webauthn/cbor_options"
 	"github.com/fxamacker/cbor/v2"
 )
 
@@ -199,7 +199,7 @@ func (a *AuthenticatorData) unmarshalAttestedData(rawAuthData []byte) {
 // Unmarshall the credential's Public Key into CBOR encoding
 func unmarshalCredentialPublicKey(keyBytes []byte) []byte {
 	var m interface{}
-	cbor.Unmarshal(keyBytes, &m)
+	cbor_options.CborDecMode.Unmarshal(keyBytes, &m)
 	rawBytes, _ := cbor.Marshal(m)
 	return rawBytes
 }

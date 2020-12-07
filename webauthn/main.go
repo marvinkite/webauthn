@@ -2,6 +2,7 @@ package webauthn
 
 import (
 	"fmt"
+	"github.com/duo-labs/webauthn/cbor_options"
 	"net/url"
 
 	"github.com/duo-labs/webauthn/protocol"
@@ -64,6 +65,9 @@ func (config *Config) validate() error {
 func New(config *Config) (*WebAuthn, error) {
 	if err := config.validate(); err != nil {
 		return nil, fmt.Errorf("Configuration error: %+v", err)
+	}
+	if cbor_options.CborDecModeErr != nil {
+		return nil, fmt.Errorf("Initilization error: %+v", cbor_options.CborDecModeErr)
 	}
 	return &WebAuthn{
 		config,
