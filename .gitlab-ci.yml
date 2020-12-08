@@ -1,0 +1,12 @@
+stages:
+  - test
+
+
+test/go-test:
+  stage: test
+  script:
+    - go test -cover ./protocol/...
+    - go test -cover ./webauthn/...
+  only:
+    refs:
+      - master
