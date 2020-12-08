@@ -61,3 +61,48 @@ func TestBase64UnmarshalJSONWithNull(t *testing.T) {
 		t.Fatalf("invalid string data received: expected %s got %s", expected.StringData, got.StringData)
 	}
 }
+
+func TestBase64MarshalJSON(t *testing.T) {
+	message := "test base64 data"
+
+	expected := testData{
+		StringData:  "test string",
+		EncodedData: URLEncodedBase64(message),
+	}
+
+	encoded := base64.RawURLEncoding.EncodeToString([]byte(message))
+	raw := fmt.Sprintf(`{"string_data":"test string","encoded_data":"%s"}`, encoded)
+
+	b := &strings.Builder{}
+	err := json.NewEncoder(b).Encode(expected)
+
+	if err != nil {
+		t.Fatalf("error encoding JSON: %v", err)
+	}
+	got := b.String()
+	got = strings.TrimSuffix(got, "\n")
+	if raw != got {
+		t.Fatalf("invalid json encoded: expected %q got %q", raw, got)
+	}
+}
+
+func TestBase64MarshalJSONWithNull(t *testing.T) {
+	expected := testData{
+		StringData:  "test string",
+		EncodedData: nil,
+	}
+
+	raw := fmt.Sprintf(`{"string_data":"test string","encoded_data":null}`)
+
+	b := &strings.Builder{}
+	err := json.NewEncoder(b).Encode(expected)
+
+	if err != nil {
+		t.Fatalf("error encoding JSON: %v", err)
+	}
+	got := b.String()
+	got = strings.TrimSuffix(got, "\n")
+	if raw != got {
+		t.Fatalf("invalid json encoded: expected %q got %q", raw, got)
+	}
+}

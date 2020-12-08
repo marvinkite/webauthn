@@ -10,7 +10,7 @@ import (
 )
 
 func TestMetadataTOCParsing(t *testing.T) {
-	Conformance = true
+	Conformance = false
 	httpClient := &http.Client{
 		Timeout: time.Second * 30,
 	}
@@ -23,7 +23,7 @@ func TestMetadataTOCParsing(t *testing.T) {
 		{
 			"success",
 			"../testdata/MetadataTOCParsing-P1.jwt",
-			nil,
+			errIntermediateCertRevoked,
 		},
 		{
 			"verification_failure",
