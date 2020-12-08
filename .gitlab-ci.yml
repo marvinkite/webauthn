@@ -4,6 +4,7 @@ stages:
 
 test/go-test:
   stage: test
+  image: golang:1.15-alpine
   script:
     - go test -cover ./protocol/...
     - go test -cover ./webauthn/...
