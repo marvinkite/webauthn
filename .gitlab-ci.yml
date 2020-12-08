@@ -13,3 +13,17 @@ test/go-test:
   only:
     refs:
       - master
+
+## Use https://github.com/jstemmer/go-junit-report to generate a JUnit report format XML file with go
+golang:
+  stage: test
+  image: golang:1.15-alpine
+  variables:
+    CGO_ENABLED: 0
+  script:
+    - go get -u github.com/jstemmer/go-junit-report
+    - go test -v 2>&1 | go-junit-report -set-exit-code > report.xml
+  artifacts:
+    when: always
+    reports:
+      junit: report.xml
