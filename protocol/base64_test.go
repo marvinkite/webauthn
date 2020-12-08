@@ -9,12 +9,12 @@ import (
 	"testing"
 )
 
-func TestBase64UnmarshalJSON(t *testing.T) {
-	type testData struct {
-		StringData  string           `json:"string_data"`
-		EncodedData URLEncodedBase64 `json:"encoded_data"`
-	}
+type testData struct {
+	StringData  string           `json:"string_data"`
+	EncodedData URLEncodedBase64 `json:"encoded_data"`
+}
 
+func TestBase64UnmarshalJSON(t *testing.T) {
 	message := "test base64 data"
 
 	expected := testData{
@@ -24,6 +24,29 @@ func TestBase64UnmarshalJSON(t *testing.T) {
 
 	encoded := base64.RawURLEncoding.EncodeToString([]byte(message))
 	raw := fmt.Sprintf(`{"string_data": "test string", "encoded_data": "%s"}`, encoded)
+
+	got := testData{}
+	err := json.NewDecoder(strings.NewReader(raw)).Decode(&got)
+	if err != nil {
+		t.Fatalf("error decoding JSON: %v", err)
+	}
+
+	if !bytes.Equal(expected.EncodedData, got.EncodedData) {
+		t.Fatalf("invalid URLEncodedBase64 data received: expected %s got %s", expected.EncodedData, got.EncodedData)
+	}
+	if expected.StringData != got.StringData {
+		t.Fatalf("invalid string data received: expected %s got %s", expected.StringData, got.StringData)
+	}
+}
+
+func TestBase64UnmarshalJSONWithNull(t *testing.T) {
+
+	expected := testData{
+		StringData:  "test string",
+		EncodedData: nil,
+	}
+
+	raw := fmt.Sprint(`{"string_data": "test string", "encoded_data": null}`)
 
 	got := testData{}
 	err := json.NewDecoder(strings.NewReader(raw)).Decode(&got)
