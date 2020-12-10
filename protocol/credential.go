@@ -104,7 +104,7 @@ func ParseCredentialCreationResponseBody(body io.Reader) (*ParsedCredentialCreat
 
 // Verifies the Client and Attestation data as laid out by §7.1. Registering a new credential
 // https://www.w3.org/TR/webauthn/#registering-a-new-credential
-func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUser bool, relyingPartyID, relyingPartyOrigin string, metadataService *metadata.MetadataService) error {
+func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUser bool, relyingPartyID, relyingPartyOrigin string, metadataService metadata.MetadataService) error {
 
 	// Handles steps 3 through 6 - Verifying the Client Data against the Relying Party's stored data
 	verifyError := pcc.Response.CollectedClientData.Verify(storedChallenge, CreateCeremony, relyingPartyOrigin)
@@ -176,13 +176,13 @@ func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUs
 	return nil
 }
 
-func VerifyX509CertificateChainAgainstMetadata(aaguid []byte, x5c []interface{}, metadataService *metadata.MetadataService) error {
+func VerifyX509CertificateChainAgainstMetadata(aaguid []byte, x5c []interface{}, metadataService metadata.MetadataService) error {
 	if metadataService != nil {
 		aaguid, err := uuid.FromBytes(aaguid)
 		if err != nil {
 			return ErrAttestationFormat.WithDetails("Error retrieving aaguid value")
 		}
-		metadataStatement := (*metadataService).WebAuthnAuthenticator(aaguid.String())
+		metadataStatement := metadataService.WebAuthnAuthenticator(aaguid.String())
 		if metadataStatement == nil {
 			return ErrAttestation.WithDetails(fmt.Sprintf("Metadata for %+v not found", aaguid.String()))
 		}
