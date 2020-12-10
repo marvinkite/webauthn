@@ -2,6 +2,7 @@ package webauthn
 
 import (
 	"fmt"
+	"github.com/duo-labs/webauthn/metadata"
 	"net/url"
 
 	"github.com/duo-labs/webauthn/protocol"
@@ -12,6 +13,7 @@ var defaultTimeout = 60000
 // WebAuthn is the primary interface of this package and contains the request handlers that should be called.
 type WebAuthn struct {
 	Config *Config
+	MetadataService *metadata.MetadataService
 }
 
 // The config values required for proper
@@ -61,11 +63,12 @@ func (config *Config) validate() error {
 }
 
 // Create a new WebAuthn object given the proper config flags
-func New(config *Config) (*WebAuthn, error) {
+func New(config *Config, service *metadata.MetadataService) (*WebAuthn, error) {
 	if err := config.validate(); err != nil {
 		return nil, fmt.Errorf("Configuration error: %+v", err)
 	}
 	return &WebAuthn{
 		config,
+		service,
 	}, nil
 }

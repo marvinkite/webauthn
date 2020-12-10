@@ -3,12 +3,14 @@ package protocol
 import (
 	"bytes"
 	"encoding/base64"
+	"github.com/duo-labs/webauthn/metadata"
 	"io/ioutil"
 	"net/http"
 	"reflect"
 	"testing"
 
 	"github.com/fxamacker/cbor/v2"
+	uuid "github.com/satori/go.uuid"
 )
 
 func TestParseCredentialCreationResponse(t *testing.T) {
@@ -225,7 +227,7 @@ func TestParsedCredentialCreationData_Verify(t *testing.T) {
 				Response:                  tt.fields.Response,
 				Raw:                       tt.fields.Raw,
 			}
-			if err := pcc.Verify(tt.args.storedChallenge.String(), tt.args.verifyUser, tt.args.relyingPartyID, tt.args.relyingPartyOrigin); (err != nil) != tt.wantErr {
+			if err := pcc.Verify(tt.args.storedChallenge.String(), tt.args.verifyUser, tt.args.relyingPartyID, tt.args.relyingPartyOrigin, nil); (err != nil) != tt.wantErr {
 				t.Errorf("ParsedCredentialCreationData.Verify() error = %+v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -241,3 +243,33 @@ var testCredentialRequestBody = `{
 		"clientDataJSON":"eyJjaGFsbGVuZ2UiOiJXOEd6RlU4cEdqaG9SYldyTERsYW1BZnFfeTRTMUNaRzFWdW9lUkxBUnJFIiwib3JpZ2luIjoiaHR0cHM6Ly93ZWJhdXRobi5pbyIsInR5cGUiOiJ3ZWJhdXRobi5jcmVhdGUifQ"
 		}
 	}`
+
+func TestVerifyX509CertificateChainAgainstMetadata(t *testing.T) {
+	aaguid, err := uuid.FromString("")
+	if err != nil {
+		t.Errorf("TestVerifyX509CertificateChainAgainstMetadata aaguid could not be parsed: %+v", err)
+	}
+	metadataService := testMetadataService{}
+	verifyError := VerifyX509CertificateChainAgainstMetadata(aaguid.Bytes(), nil, &metadataService)
+	if verifyError != nil {
+		t.Errorf("TestVerifyX509CertificateChainAgainstMetadata returned error = %v, want error = nil", verifyError)
+	}
+}
+
+
+type testMetadataService struct {
+
+}
+
+
+func (metadataService *testMetadataService) WebAuthnAuthenticator(aaguid string) *metadata.MetadataStatement {
+	if aaguid != "" {
+		return nil
+	} else {
+		return nil
+	}
+}
+
+func (metadataService *testMetadataService) U2FAuthenticator(attestationCertificateKeyIdentifier string) *metadata.MetadataStatement {
+	return nil
+}

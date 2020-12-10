@@ -2,8 +2,12 @@ package protocol
 
 import (
 	"crypto/sha256"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
+	"github.com/duo-labs/webauthn/metadata"
+	uuid "github.com/satori/go.uuid"
 	"io"
 	"net/http"
 )
@@ -100,7 +104,7 @@ func ParseCredentialCreationResponseBody(body io.Reader) (*ParsedCredentialCreat
 
 // Verifies the Client and Attestation data as laid out by §7.1. Registering a new credential
 // https://www.w3.org/TR/webauthn/#registering-a-new-credential
-func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUser bool, relyingPartyID, relyingPartyOrigin string) error {
+func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUser bool, relyingPartyID, relyingPartyOrigin string, metadataService *metadata.MetadataService) error {
 
 	// Handles steps 3 through 6 - Verifying the Client Data against the Relying Party's stored data
 	verifyError := pcc.Response.CollectedClientData.Verify(storedChallenge, CreateCeremony, relyingPartyOrigin)
@@ -131,6 +135,16 @@ func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUs
 	// TODO: There are no valid AAGUIDs yet or trust sources supported. We could implement policy for the RP in
 	// the future, however.
 
+	x5c, x5cPresent := pcc.Response.AttestationObject.AttStatement["x5c"].([]interface{})
+	if !x5cPresent {
+		x5c = nil
+	}
+
+	certificateChainError := VerifyX509CertificateChainAgainstMetadata(pcc.Response.AttestationObject.AuthData.AttData.AAGUID, x5c, metadataService)
+	if certificateChainError != nil {
+		return certificateChainError
+	}
+
 	// Step 16. Assess the attestation trustworthiness using outputs of the verification procedure in step 14, as follows:
 	// - If self attestation was used, check if self attestation is acceptable under Relying Party policy.
 	// - If ECDAA was used, verify that the identifier of the ECDAA-Issuer public key used is included in
@@ -138,6 +152,7 @@ func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUs
 	// - Otherwise, use the X.509 certificates returned by the verification procedure to verify that the
 	//   attestation public key correctly chains up to an acceptable root certificate.
 
+	// is handled in the step above
 	// TODO: We're not supporting trust anchors, self-attestation policy, or acceptable root certs yet
 
 	// Step 17. Check that the credentialId is not yet registered to any other user. If registration is
@@ -158,5 +173,62 @@ func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUs
 
 	// TODO: Not implemented for the reasons mentioned under Step 16
 
+	return nil
+}
+
+func VerifyX509CertificateChainAgainstMetadata(aaguid []byte, x5c []interface{}, metadataService *metadata.MetadataService) error {
+	if metadataService != nil {
+		aaguid, err := uuid.FromBytes(aaguid)
+		if err != nil {
+			return ErrAttestationFormat.WithDetails("Error retrieving aaguid value")
+		}
+		metadataStatement := (*metadataService).WebAuthnAuthenticator(aaguid.String())
+		if metadataStatement == nil {
+			return ErrAttestation.WithDetails(fmt.Sprintf("Metadata for %+v not found", aaguid.String()))
+		}
+
+		trustAnchorPool := x509.NewCertPool()
+
+		for _, certString := range metadataStatement.AttestationRootCertificates {
+			// create a buffer large enough to hold the certificate bytes
+			o := make([]byte, base64.StdEncoding.DecodedLen(len(certString)))
+			// base64 decode the certificate into the buffer
+			n, _ := base64.StdEncoding.Decode(o, []byte(certString))
+			cert, err := x509.ParseCertificate(o[:n])
+			if err == nil && cert != nil {
+				trustAnchorPool.AddCert(cert)
+			}
+		}
+
+		var attCert *x509.Certificate
+		intermediateCerts := x509.NewCertPool()
+		for i, attCertBytes := range x5c {
+			cb, cv := attCertBytes.([]byte)
+			if !cv {
+				return ErrAttestation.WithDetails("Error getting certificate from x5c certificate chain")
+			}
+			cert, err := x509.ParseCertificate(cb)
+			if err != nil {
+				return ErrAttestationFormat.WithDetails(fmt.Sprintf("Error parsing certificate from ASN.1 data: %+v", err))
+			}
+			if i == 0 {
+				attCert = cert
+			} else {
+				intermediateCerts.AddCert(cert)
+			}
+		}
+
+		if attCert == nil {
+			return ErrAttestation.WithDetails("Error no attestation certificate found in x5c certificate chain")
+		}
+
+		verifyOpts := x509.VerifyOptions{
+			Intermediates: intermediateCerts,
+			Roots:         trustAnchorPool,
+		}
+		if _, err := attCert.Verify(verifyOpts); err != nil {
+			return ErrAttestation.WithDetails(fmt.Sprintf("Error validating certificate chain: %+v", err))
+		}
+	}
 	return nil
 }
