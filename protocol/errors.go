@@ -66,6 +66,10 @@ var (
 		Type:    "not_implemented",
 		Details: "This field is not yet supported by this library",
 	}
+	ErrMetadataNotFound = &Error{
+		Type:    "metadata_not_found",
+		Details: "Metadata ",
+	}
 )
 
 func (err *Error) Error() string {
