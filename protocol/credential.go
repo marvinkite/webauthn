@@ -134,8 +134,7 @@ func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUs
 	// one way to obtain such information, using the aaguid in the attestedCredentialData in authData.
 	// [https://fidoalliance.org/specs/fido-v2.0-id-20180227/fido-metadata-service-v2.0-id-20180227.html]
 
-	// TODO: There are no valid AAGUIDs yet or trust sources supported. We could implement policy for the RP in
-	// the future, however.
+	// TODO: if RelyingPartyPolicy allows any authenticator, then skip step 15 & 16
 	var attestationTrustworthinessError error
 	if metadataService != nil {
 		metadataStatement := GetMetadataStatement(pcc, metadataService)
@@ -151,28 +150,40 @@ func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUs
 			//   attestation public key correctly chains up to an acceptable root certificate.
 
 			switch pcc.Response.AttestationObject.Format {
-			case "apple":
-
 			case "packed":
-			case "tpm":
-				// x5c, ecdaaKeyId
-			}
-
-			var hasBasicFull = false
-			for _, a := range metadataStatement.AttestationTypes {
-				if metadata.AuthenticatorAttestationType(a) == metadata.AuthenticatorAttestationType(metadata.BasicFull) || metadata.AuthenticatorAttestationType(a) == metadata.AuthenticatorAttestationType(metadata.AttCA) {
-					hasBasicFull = true
+				// Basic, Self, AttCA, ECDAA
+				if pcc.isBasicOrAttCaAttestation() {
+					attestationTrustworthinessError = verifyBasicOrAttCaAttestation(metadataStatement, pcc)
+				} else if pcc.isEcdaaAttestation() {
+					attestationTrustworthinessError = verifyEcdaaKeyId(metadataStatement, pcc)
+				} else if pcc.isSelfAttestation() {
+					attestationTrustworthinessError = nil
 				}
+			case "apple":
+				// AttCA
+				// TODO: implement apple attestation
+				attestationTrustworthinessError = ErrNotSpecImplemented.WithDetails("Apple Attestation format not implemented")
+			case "tpm":
+				// Basic, AttCA
+				attestationTrustworthinessError = verifyBasicOrAttCaAttestation(metadataStatement, pcc)
+			case "android-key":
+				// Basic (has x5c)
+				attestationTrustworthinessError = verifyBasicOrAttCaAttestation(metadataStatement, pcc)
+			case "android-safetynet":
+				// Basic
+				attestationTrustworthinessError = nil // should be verified before in attestation_safetynet.go
+			case "fido-u2f":
+				// Basic, AttCA (has x5c)
+				attestationTrustworthinessError = verifyBasicOrAttCaAttestation(metadataStatement, pcc)
+			case "none":
+				attestationTrustworthinessError = nil // does not need verification
 			}
 
-			x5c, x5cPresent := pcc.Response.AttestationObject.AttStatement["x5c"].([][]byte)
-			if x5cPresent && hasBasicFull {
-				attestationTrustworthinessError = VerifyX509CertificateChainAgainstMetadata(metadataStatement, x5c)
+			if attestationTrustworthinessError != nil {
+				return attestationTrustworthinessError
 			}
 		}
 	}
-
-	// TODO: We're not supporting trust anchors, self-attestation policy, or acceptable root certs yet
 
 	// Step 17. Check that the credentialId is not yet registered to any other user. If registration is
 	// requested for a credential that is already registered to a different user, the Relying Party SHOULD
@@ -192,10 +203,58 @@ func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUs
 
 	// TODO: Not implemented for the reasons mentioned under Step 16
 	if attestationTrustworthinessError != nil {
-		 return attestationTrustworthinessError
+		return attestationTrustworthinessError
 	}
 
 	return nil
+}
+
+func (pcc *ParsedCredentialCreationData) isBasicOrAttCaAttestation() bool {
+	_, x5cPresent := pcc.Response.AttestationObject.AttStatement["x5c"].([][]byte)
+	return x5cPresent
+}
+
+func (pcc *ParsedCredentialCreationData) isEcdaaAttestation() bool {
+	_, ecdaaKeyIdPresent := pcc.Response.AttestationObject.AttStatement["ecdaaKeyId"].([]byte)
+	return ecdaaKeyIdPresent
+}
+
+func (pcc *ParsedCredentialCreationData) isSelfAttestation() bool {
+	if pcc.isBasicOrAttCaAttestation() || pcc.isEcdaaAttestation() {
+		return false
+	} else {
+		return true
+	}
+}
+
+func verifyBasicOrAttCaAttestation(metadataStatement *metadata.MetadataStatement, pcc *ParsedCredentialCreationData) error {
+	if metadataHasAttestation(metadataStatement, metadata.BasicFull) || metadataHasAttestation(metadataStatement, metadata.AttCA) {
+		return verifyCertificateChain(metadataStatement, pcc)
+	} else {
+		return ErrAttestation.WithDetails("Authenticator doesn't support BasicFull or AttCa Attestation")
+	}
+}
+
+func verifyCertificateChain(metadataStatement *metadata.MetadataStatement, pcc *ParsedCredentialCreationData) error {
+	x5c, x5cPresent := pcc.Response.AttestationObject.AttStatement["x5c"].([][]byte)
+	if x5cPresent {
+		return VerifyX509CertificateChainAgainstMetadata(metadataStatement, x5c)
+	} else {
+		return ErrAttestation.WithDetails("X5C Certificate Chain not present")
+	}
+}
+
+func verifyEcdaaKeyId(statement *metadata.MetadataStatement, pcc *ParsedCredentialCreationData) error {
+	return ErrNotSpecImplemented.WithDetails("Ecdaa not implemented")
+}
+
+func metadataHasAttestation(metadataStatement *metadata.MetadataStatement, attestationType metadata.AuthenticatorAttestationType) bool {
+	for _, at := range metadataStatement.AttestationTypes {
+		if metadata.AuthenticatorAttestationType(at) == attestationType {
+			return true
+		}
+	}
+	return false
 }
 
 func GetMetadataStatement(pcc *ParsedCredentialCreationData, metadataService metadata.MetadataService) *metadata.MetadataStatement {
