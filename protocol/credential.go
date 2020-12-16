@@ -210,7 +210,7 @@ func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUs
 }
 
 func (pcc *ParsedCredentialCreationData) isBasicOrAttCaAttestation() bool {
-	_, x5cPresent := pcc.Response.AttestationObject.AttStatement["x5c"].([][]byte)
+	_, x5cPresent := pcc.Response.AttestationObject.AttStatement["x5c"].([]interface{})
 	return x5cPresent
 }
 
@@ -236,7 +236,7 @@ func verifyBasicOrAttCaAttestation(metadataStatement *metadata.MetadataStatement
 }
 
 func verifyCertificateChain(metadataStatement *metadata.MetadataStatement, pcc *ParsedCredentialCreationData) error {
-	x5c, x5cPresent := pcc.Response.AttestationObject.AttStatement["x5c"].([][]byte)
+	x5c, x5cPresent := pcc.Response.AttestationObject.AttStatement["x5c"].([]interface{})
 	if x5cPresent {
 		return VerifyX509CertificateChainAgainstMetadata(metadataStatement, x5c)
 	} else {
@@ -271,7 +271,7 @@ func GetMetadataStatement(pcc *ParsedCredentialCreationData, metadataService met
 	}
 }
 
-func VerifyX509CertificateChainAgainstMetadata(metadataStatement *metadata.MetadataStatement, x5c [][]byte) error {
+func VerifyX509CertificateChainAgainstMetadata(metadataStatement *metadata.MetadataStatement, x5c []interface{}) error {
 	if metadataStatement == nil {
 		return ErrAttestation.WithDetails("Metadata for Authenticator not found")
 	}
@@ -291,7 +291,8 @@ func VerifyX509CertificateChainAgainstMetadata(metadataStatement *metadata.Metad
 
 	var attCert *x509.Certificate
 	intermediateCerts := x509.NewCertPool()
-	for i, attCertBytes := range x5c {
+	for i, attCertInterfaceBytes := range x5c {
+		attCertBytes := attCertInterfaceBytes.([]byte)
 		cert, err := x509.ParseCertificate(attCertBytes)
 		if err != nil {
 			return ErrAttestationFormat.WithDetails(fmt.Sprintf("Error parsing certificate from ASN.1 data: %+v", err))
