@@ -9,12 +9,11 @@ import (
 	"encoding/asn1"
 	"encoding/pem"
 	"fmt"
+	"github.com/duo-labs/webauthn/cbor_options"
 	"hash"
 	"math/big"
 
 	"golang.org/x/crypto/ed25519"
-
-	"github.com/fxamacker/cbor/v2"
 )
 
 // PublicKeyData The public key portion of a Relying Party-specific credential key pair, generated
@@ -160,21 +159,21 @@ func HasherFromCOSEAlg(coseAlg COSEAlgorithmIdentifier) func() hash.Hash {
 // Figure out what kind of COSE material was provided and create the data for the new key
 func ParsePublicKey(keyBytes []byte) (interface{}, error) {
 	pk := PublicKeyData{}
-	cbor.Unmarshal(keyBytes, &pk)
+	cbor_options.CborDecMode.Unmarshal(keyBytes, &pk)
 	switch COSEKeyType(pk.KeyType) {
 	case OctetKey:
 		var o OKPPublicKeyData
-		cbor.Unmarshal(keyBytes, &o)
+		cbor_options.CborDecMode.Unmarshal(keyBytes, &o)
 		o.PublicKeyData = pk
 		return o, nil
 	case EllipticKey:
 		var e EC2PublicKeyData
-		cbor.Unmarshal(keyBytes, &e)
+		cbor_options.CborDecMode.Unmarshal(keyBytes, &e)
 		e.PublicKeyData = pk
 		return e, nil
 	case RSAKey:
 		var r RSAPublicKeyData
-		cbor.Unmarshal(keyBytes, &r)
+		cbor_options.CborDecMode.Unmarshal(keyBytes, &r)
 		r.PublicKeyData = pk
 		return r, nil
 	default:
