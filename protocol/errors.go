@@ -66,6 +66,10 @@ var (
 		Type:    "not_implemented",
 		Details: "This field is not yet supported by this library",
 	}
+	ErrCredentialAlreadyExists = &Error{
+		Type:    "credential_already_exists",
+		Details: "The credential already exists",
+	}
 )
 
 func (err *Error) Error() string {
