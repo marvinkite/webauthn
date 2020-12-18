@@ -2,8 +2,12 @@ package protocol
 
 import (
 	"crypto/sha256"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
+	"github.com/duo-labs/webauthn/metadata"
+	uuid "github.com/satori/go.uuid"
 	"io"
 	"net/http"
 )
@@ -100,7 +104,7 @@ func ParseCredentialCreationResponseBody(body io.Reader) (*ParsedCredentialCreat
 
 // Verifies the Client and Attestation data as laid out by §7.1. Registering a new credential
 // https://www.w3.org/TR/webauthn/#registering-a-new-credential
-func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUser bool, relyingPartyID, relyingPartyOrigin string) error {
+func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUser bool, relyingPartyID, relyingPartyOrigin string, metadataService metadata.MetadataService) error {
 
 	// Handles steps 3 through 6 - Verifying the Client Data against the Relying Party's stored data
 	verifyError := pcc.Response.CollectedClientData.Verify(storedChallenge, CreateCeremony, relyingPartyOrigin)
@@ -115,6 +119,8 @@ func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUs
 	// structure to obtain the attestation statement format fmt, the authenticator data authData, and the
 	// attestation statement attStmt. is handled while
 
+	// TODO: Maybe check RP Policy first (if aaguid is in allowed authenticators list)
+
 	// We do the above step while parsing and decoding the CredentialCreationResponse
 	// Handle steps 9 through 14 - This verifies the attestaion object and
 	verifyError = pcc.Response.AttestationObject.Verify(relyingPartyID, clientDataHash[:], verifyUser)
@@ -128,17 +134,56 @@ func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUs
 	// one way to obtain such information, using the aaguid in the attestedCredentialData in authData.
 	// [https://fidoalliance.org/specs/fido-v2.0-id-20180227/fido-metadata-service-v2.0-id-20180227.html]
 
-	// TODO: There are no valid AAGUIDs yet or trust sources supported. We could implement policy for the RP in
-	// the future, however.
+	// TODO: if RelyingPartyPolicy allows any authenticator, then skip step 15 & 16
+	var attestationTrustworthinessError error
+	if metadataService != nil {
+		metadataStatement := GetMetadataStatement(pcc, metadataService)
+		if metadataStatement == nil {
+			attestationTrustworthinessError = ErrMetadataNotFound
+		} else {
 
-	// Step 16. Assess the attestation trustworthiness using outputs of the verification procedure in step 14, as follows:
-	// - If self attestation was used, check if self attestation is acceptable under Relying Party policy.
-	// - If ECDAA was used, verify that the identifier of the ECDAA-Issuer public key used is included in
-	//   the set of acceptable trust anchors obtained in step 15.
-	// - Otherwise, use the X.509 certificates returned by the verification procedure to verify that the
-	//   attestation public key correctly chains up to an acceptable root certificate.
+			// Step 16. Assess the attestation trustworthiness using outputs of the verification procedure in step 14, as follows:
+			// - If self attestation was used, check if self attestation is acceptable under Relying Party policy.
+			// - If ECDAA was used, verify that the identifier of the ECDAA-Issuer public key used is included in
+			//   the set of acceptable trust anchors obtained in step 15.
+			// - Otherwise, use the X.509 certificates returned by the verification procedure to verify that the
+			//   attestation public key correctly chains up to an acceptable root certificate.
 
-	// TODO: We're not supporting trust anchors, self-attestation policy, or acceptable root certs yet
+			switch pcc.Response.AttestationObject.Format {
+			case "packed":
+				// Basic, Self, AttCA, ECDAA
+				if pcc.isBasicOrAttCaAttestation() {
+					attestationTrustworthinessError = verifyBasicOrAttCaAttestation(metadataStatement, pcc)
+				} else if pcc.isEcdaaAttestation() {
+					attestationTrustworthinessError = verifyEcdaaKeyId(metadataStatement, pcc)
+				} else if pcc.isSelfAttestation() {
+					attestationTrustworthinessError = nil
+				}
+			case "apple":
+				// AttCA
+				// TODO: implement apple attestation
+				attestationTrustworthinessError = ErrNotSpecImplemented.WithDetails("Apple Attestation format not implemented")
+			case "tpm":
+				// Basic, AttCA
+				attestationTrustworthinessError = verifyBasicOrAttCaAttestation(metadataStatement, pcc)
+			case "android-key":
+				// Basic (has x5c)
+				attestationTrustworthinessError = verifyBasicOrAttCaAttestation(metadataStatement, pcc)
+			case "android-safetynet":
+				// Basic
+				attestationTrustworthinessError = nil // should be verified before in attestation_safetynet.go
+			case "fido-u2f":
+				// Basic, AttCA (has x5c)
+				attestationTrustworthinessError = verifyBasicOrAttCaAttestation(metadataStatement, pcc)
+			case "none":
+				attestationTrustworthinessError = nil // does not need verification
+			}
+
+			if attestationTrustworthinessError != nil {
+				return attestationTrustworthinessError
+			}
+		}
+	}
 
 	// Step 17. Check that the credentialId is not yet registered to any other user. If registration is
 	// requested for a credential that is already registered to a different user, the Relying Party SHOULD
@@ -157,6 +202,118 @@ func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUs
 	// the Relying Party SHOULD fail the registration ceremony.
 
 	// TODO: Not implemented for the reasons mentioned under Step 16
+	if attestationTrustworthinessError != nil {
+		return attestationTrustworthinessError
+	}
 
+	return nil
+}
+
+func (pcc *ParsedCredentialCreationData) isBasicOrAttCaAttestation() bool {
+	_, x5cPresent := pcc.Response.AttestationObject.AttStatement["x5c"].([]interface{})
+	return x5cPresent
+}
+
+func (pcc *ParsedCredentialCreationData) isEcdaaAttestation() bool {
+	_, ecdaaKeyIdPresent := pcc.Response.AttestationObject.AttStatement["ecdaaKeyId"].([]byte)
+	return ecdaaKeyIdPresent
+}
+
+func (pcc *ParsedCredentialCreationData) isSelfAttestation() bool {
+	if pcc.isBasicOrAttCaAttestation() || pcc.isEcdaaAttestation() {
+		return false
+	} else {
+		return true
+	}
+}
+
+func verifyBasicOrAttCaAttestation(metadataStatement *metadata.MetadataStatement, pcc *ParsedCredentialCreationData) error {
+	if metadataHasAttestation(metadataStatement, metadata.BasicFull) || metadataHasAttestation(metadataStatement, metadata.AttCA) {
+		return verifyCertificateChain(metadataStatement, pcc)
+	} else {
+		return ErrAttestation.WithDetails("Authenticator doesn't support BasicFull or AttCa Attestation")
+	}
+}
+
+func verifyCertificateChain(metadataStatement *metadata.MetadataStatement, pcc *ParsedCredentialCreationData) error {
+	x5c, x5cPresent := pcc.Response.AttestationObject.AttStatement["x5c"].([]interface{})
+	if x5cPresent {
+		return VerifyX509CertificateChainAgainstMetadata(metadataStatement, x5c)
+	} else {
+		return ErrAttestation.WithDetails("X5C Certificate Chain not present")
+	}
+}
+
+func verifyEcdaaKeyId(statement *metadata.MetadataStatement, pcc *ParsedCredentialCreationData) error {
+	return ErrNotSpecImplemented.WithDetails("Ecdaa not implemented")
+}
+
+func metadataHasAttestation(metadataStatement *metadata.MetadataStatement, attestationType metadata.AuthenticatorAttestationType) bool {
+	for _, at := range metadataStatement.AttestationTypes {
+		if metadata.AuthenticatorAttestationType(at) == attestationType {
+			return true
+		}
+	}
+	return false
+}
+
+func GetMetadataStatement(pcc *ParsedCredentialCreationData, metadataService metadata.MetadataService) *metadata.MetadataStatement {
+	aaguid, err := uuid.FromBytes(pcc.Response.AttestationObject.AuthData.AttData.AAGUID)
+	if err != nil {
+		return nil
+	}
+	if aaguid.String() == "00000000-0000-0000-0000-000000000000" {
+		metadataStatement := metadataService.U2FAuthenticator("")
+		return metadataStatement
+	} else {
+		metadataStatement := metadataService.WebAuthnAuthenticator(aaguid.String())
+		return metadataStatement
+	}
+}
+
+func VerifyX509CertificateChainAgainstMetadata(metadataStatement *metadata.MetadataStatement, x5c []interface{}) error {
+	if metadataStatement == nil {
+		return ErrAttestation.WithDetails("Metadata for Authenticator not found")
+	}
+
+	trustAnchorPool := x509.NewCertPool()
+
+	for _, certString := range metadataStatement.AttestationRootCertificates {
+		// create a buffer large enough to hold the certificate bytes
+		o := make([]byte, base64.StdEncoding.DecodedLen(len(certString)))
+		// base64 decode the certificate into the buffer
+		n, _ := base64.StdEncoding.Decode(o, []byte(certString))
+		cert, err := x509.ParseCertificate(o[:n])
+		if err == nil && cert != nil {
+			trustAnchorPool.AddCert(cert)
+		}
+	}
+
+	var attCert *x509.Certificate
+	intermediateCerts := x509.NewCertPool()
+	for i, attCertInterfaceBytes := range x5c {
+		attCertBytes := attCertInterfaceBytes.([]byte)
+		cert, err := x509.ParseCertificate(attCertBytes)
+		if err != nil {
+			return ErrAttestationFormat.WithDetails(fmt.Sprintf("Error parsing certificate from ASN.1 data: %+v", err))
+		}
+		if i == 0 {
+			attCert = cert
+		} else {
+			intermediateCerts.AddCert(cert)
+		}
+	}
+
+	if attCert == nil {
+		return ErrAttestation.WithDetails("Error no attestation certificate found in x5c certificate chain")
+	}
+
+	verifyOpts := x509.VerifyOptions{
+		Intermediates: intermediateCerts,
+		Roots:         trustAnchorPool,
+	}
+	if _, err := attCert.Verify(verifyOpts); err != nil {
+		return ErrAttestation.WithDetails(fmt.Sprintf("Error validating certificate chain: %+v", err))
+	}
 	return nil
 }
