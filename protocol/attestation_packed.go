@@ -182,6 +182,7 @@ func handleBasicAttestation(signature, clientDataHash, authData, aaguid []byte, 
 	}
 	uuid, err := uuid.FromBytes(aaguid)
 
+	// TODO: brauchen wir diesen Abschnitt dann noch, wenn wir die Daten vom MetadataService bekommmen ???
 	if meta, ok := metadata.Metadata[uuid]; ok {
 		for _, s := range meta.StatusReports {
 			if metadata.IsUndesiredAuthenticatorStatus(metadata.AuthenticatorStatus(s.Status)) {

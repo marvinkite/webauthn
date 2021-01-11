@@ -2,6 +2,8 @@ package webauthn
 
 import (
 	"fmt"
+	"github.com/duo-labs/webauthn/cbor_options"
+	"github.com/duo-labs/webauthn/metadata"
 	"net/url"
 
 	"github.com/duo-labs/webauthn/protocol"
@@ -12,6 +14,7 @@ var defaultTimeout = 60000
 // WebAuthn is the primary interface of this package and contains the request handlers that should be called.
 type WebAuthn struct {
 	Config *Config
+	MetadataService metadata.MetadataService
 	CredentialStore protocol.CredentialStore
 }
 
@@ -62,12 +65,16 @@ func (config *Config) validate() error {
 }
 
 // Create a new WebAuthn object given the proper config flags
-func New(config *Config, credentialStore protocol.CredentialStore) (*WebAuthn, error) {
+func New(config *Config, service metadata.MetadataService, credentialStore protocol.CredentialStore) (*WebAuthn, error) {
 	if err := config.validate(); err != nil {
 		return nil, fmt.Errorf("Configuration error: %+v", err)
 	}
+	if cbor_options.CborDecModeErr != nil {
+		return nil, fmt.Errorf("Initilization error: %+v", cbor_options.CborDecModeErr)
+	}
 	return &WebAuthn{
 		config,
+		service,
 		credentialStore,
 	}, nil
 }
