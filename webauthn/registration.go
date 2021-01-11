@@ -66,7 +66,7 @@ func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOptio
 		Challenge:               base64.RawURLEncoding.EncodeToString(challenge),
 		UserID:                  user.WebAuthnID(),
 		UserVerification:        creationOptions.AuthenticatorSelection.UserVerification,
-		ConveyancePreference:    creationOptions.AttestationPreference,
+		ConveyancePreference:    creationOptions.Attestation,
 		AuthenticatorAttachment: authSelection.AuthenticatorAttachment,
 	}
 
