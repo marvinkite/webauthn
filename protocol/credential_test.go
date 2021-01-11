@@ -156,6 +156,7 @@ func TestParsedCredentialCreationData_Verify(t *testing.T) {
 		verifyUser         bool
 		relyingPartyID     string
 		relyingPartyOrigin string
+		credentialStore    CredentialStore
 	}
 	tests := []struct {
 		name    string
@@ -215,6 +216,119 @@ func TestParsedCredentialCreationData_Verify(t *testing.T) {
 				verifyUser:         false,
 				relyingPartyID:     `webauthn.io`,
 				relyingPartyOrigin: `https://webauthn.io`,
+				credentialStore:    nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "Verification Test / CredentialID already exists",
+			fields: fields{
+				ParsedPublicKeyCredential: ParsedPublicKeyCredential{
+					ParsedCredential: ParsedCredential{
+						ID:   "6xrtBhJQW6QU4tOaB4rrHaS2Ks0yDDL_q8jDC16DEjZ-VLVf4kCRkvl2xp2D71sTPYns-exsHQHTy3G-zJRK8g",
+						Type: "public-key",
+					},
+					RawID: byteID,
+				},
+				Response: ParsedAttestationResponse{
+					CollectedClientData: CollectedClientData{
+						Type:      CeremonyType("webauthn.create"),
+						Challenge: "W8GzFU8pGjhoRbWrLDlamAfq_y4S1CZG1VuoeRLARrE",
+						Origin:    "https://webauthn.io",
+					},
+					AttestationObject: AttestationObject{
+						Format:      "none",
+						RawAuthData: byteAuthData,
+						AuthData: AuthenticatorData{
+							RPIDHash: byteRPIDHash,
+							Counter:  0,
+							Flags:    0x041,
+							AttData: AttestedCredentialData{
+								AAGUID:              make([]byte, 16),
+								CredentialID:        byteID,
+								CredentialPublicKey: byteCredentialPubKey,
+							},
+						},
+					},
+				},
+				Raw: CredentialCreationResponse{
+					PublicKeyCredential: PublicKeyCredential{
+						Credential: Credential{
+							Type: "public-key",
+							ID:   "6xrtBhJQW6QU4tOaB4rrHaS2Ks0yDDL_q8jDC16DEjZ-VLVf4kCRkvl2xp2D71sTPYns-exsHQHTy3G-zJRK8g",
+						},
+						RawID: byteID,
+					},
+					AttestationResponse: AuthenticatorAttestationResponse{
+						AuthenticatorResponse: AuthenticatorResponse{
+							ClientDataJSON: byteClientDataJSON,
+						},
+						AttestationObject: byteAttObject,
+					},
+				},
+			},
+			args: args{
+				storedChallenge:    byteChallenge,
+				verifyUser:         false,
+				relyingPartyID:     `webauthn.io`,
+				relyingPartyOrigin: `https://webauthn.io`,
+				credentialStore:    &testCredentialStore{},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Verification Test / CredentialID not exists",
+			fields: fields{
+				ParsedPublicKeyCredential: ParsedPublicKeyCredential{
+					ParsedCredential: ParsedCredential{
+						ID:   "6xrtBhJQW6QU4tOaB4rrHaS2Ks0yDDL_q8jDC16DEjZ-VLVf4kCRkvl2xp2D71sTPYns-exsHQHTy3G-zJRK8g",
+						Type: "public-key",
+					},
+					RawID: byteID,
+				},
+				Response: ParsedAttestationResponse{
+					CollectedClientData: CollectedClientData{
+						Type:      CeremonyType("webauthn.create"),
+						Challenge: "W8GzFU8pGjhoRbWrLDlamAfq_y4S1CZG1VuoeRLARrE",
+						Origin:    "https://webauthn.io",
+					},
+					AttestationObject: AttestationObject{
+						Format:      "none",
+						RawAuthData: byteAuthData,
+						AuthData: AuthenticatorData{
+							RPIDHash: byteRPIDHash,
+							Counter:  0,
+							Flags:    0x041,
+							AttData: AttestedCredentialData{
+								AAGUID:              make([]byte, 16),
+								CredentialID:        make([]byte, 0),
+								CredentialPublicKey: byteCredentialPubKey,
+							},
+						},
+					},
+				},
+				Raw: CredentialCreationResponse{
+					PublicKeyCredential: PublicKeyCredential{
+						Credential: Credential{
+							Type: "public-key",
+							ID:   "6xrtBhJQW6QU4tOaB4rrHaS2Ks0yDDL_q8jDC16DEjZ-VLVf4kCRkvl2xp2D71sTPYns-exsHQHTy3G-zJRK8g",
+						},
+						RawID: byteID,
+					},
+					AttestationResponse: AuthenticatorAttestationResponse{
+						AuthenticatorResponse: AuthenticatorResponse{
+							ClientDataJSON: byteClientDataJSON,
+						},
+						AttestationObject: byteAttObject,
+					},
+				},
+			},
+			args: args{
+				storedChallenge:    byteChallenge,
+				verifyUser:         false,
+				relyingPartyID:     `webauthn.io`,
+				relyingPartyOrigin: `https://webauthn.io`,
+				credentialStore:    &testCredentialStore{},
 			},
 			wantErr: false,
 		},
@@ -226,7 +340,7 @@ func TestParsedCredentialCreationData_Verify(t *testing.T) {
 				Response:                  tt.fields.Response,
 				Raw:                       tt.fields.Raw,
 			}
-			if err := pcc.Verify(tt.args.storedChallenge.String(), tt.args.verifyUser, tt.args.relyingPartyID, tt.args.relyingPartyOrigin, nil); (err != nil) != tt.wantErr {
+			if err := pcc.Verify(tt.args.storedChallenge.String(), tt.args.verifyUser, tt.args.relyingPartyID, tt.args.relyingPartyOrigin, nil, tt.args.credentialStore); (err != nil) != tt.wantErr {
 				t.Errorf("ParsedCredentialCreationData.Verify() error = %+v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -515,7 +629,7 @@ func TestParsedCredentialCreationData_Verify_With_Metadata(t *testing.T) {
 				Response:                  tt.fields.Response,
 				Raw:                       tt.fields.Raw,
 			}
-			if err := pcc.Verify(tt.args.storedChallenge.String(), tt.args.verifyUser, tt.args.relyingPartyID, tt.args.relyingPartyOrigin, tt.args.metadataService); (err != nil) != tt.wantErr {
+			if err := pcc.Verify(tt.args.storedChallenge.String(), tt.args.verifyUser, tt.args.relyingPartyID, tt.args.relyingPartyOrigin, tt.args.metadataService, nil); (err != nil) != tt.wantErr {
 				t.Errorf("ParsedCredentialCreationData.Verify() error = %+v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -603,4 +717,17 @@ var metadataStatement = &metadata.MetadataStatement{
 	EcdaaTrustAnchors:                    nil,
 	Icon:                                 "",
 	SupportedExtensions:                  nil,
+}
+
+type testCredentialStore struct {
+
+}
+
+func (store *testCredentialStore)ExistsCredential(credentialId []byte) bool {
+	storedId, _ := base64.RawURLEncoding.DecodeString("6xrtBhJQW6QU4tOaB4rrHaS2Ks0yDDL_q8jDC16DEjZ-VLVf4kCRkvl2xp2D71sTPYns-exsHQHTy3G-zJRK8g")
+	if bytes.Equal(credentialId, storedId) {
+		return true
+	} else {
+		return false
+	}
 }

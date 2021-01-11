@@ -104,7 +104,7 @@ func ParseCredentialCreationResponseBody(body io.Reader) (*ParsedCredentialCreat
 
 // Verifies the Client and Attestation data as laid out by §7.1. Registering a new credential
 // https://www.w3.org/TR/webauthn/#registering-a-new-credential
-func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUser bool, relyingPartyID, relyingPartyOrigin string, metadataService metadata.MetadataService) error {
+func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUser bool, relyingPartyID, relyingPartyOrigin string, metadataService metadata.MetadataService, credentialStore CredentialStore) error {
 
 	// Handles steps 3 through 6 - Verifying the Client Data against the Relying Party's stored data
 	verifyError := pcc.Response.CollectedClientData.Verify(storedChallenge, CreateCeremony, relyingPartyOrigin)
@@ -189,9 +189,12 @@ func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUs
 	// requested for a credential that is already registered to a different user, the Relying Party SHOULD
 	// fail this registration ceremony, or it MAY decide to accept the registration, e.g. while deleting
 	// the older registration.
-
-	// TODO: We can't support this in the code's current form, the Relying Party would need to check for this
-	// against their database
+	if credentialStore != nil {
+		credential := credentialStore.ExistsCredential(pcc.Response.AttestationObject.AuthData.AttData.CredentialID)
+		if credential {
+			return ErrCredentialAlreadyExists
+		}
+	}
 
 	// Step 18 If the attestation statement attStmt verified successfully and is found to be trustworthy, then
 	// register the new credential with the account that was denoted in the options.user passed to create(), by

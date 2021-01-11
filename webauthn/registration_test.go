@@ -34,7 +34,10 @@ func TestRegistration_BeginRegistrationDefaultOptions(t *testing.T) {
 		RPID:          "http://localhost",
 		RPDisplayName: "Test Relying Party",
 		RPIcon:        "icon",
-	}, nil}
+	},
+		nil,
+		nil,
+	}
 	options, sessionData, err := webauthn.BeginRegistration(user)
 
 	if err != nil {
@@ -83,7 +86,10 @@ func TestRegistration_BeginRegistrationAuthenticatorSelectionOption(t *testing.T
 		RPID:          "http://localhost",
 		RPDisplayName: "Test Relying Party",
 		RPIcon:        "icon",
-	}, nil}
+	},
+		nil,
+		nil,
+	}
 
 	authenticatorSelection := protocol.AuthenticatorSelection{
 		AuthenticatorAttachment: protocol.AuthenticatorAttachment("platform"),
@@ -123,7 +129,10 @@ func TestRegistration_BeginRegistrationConveyancePreferenceOption(t *testing.T) 
 		RPID:          "http://localhost",
 		RPDisplayName: "Test Relying Party",
 		RPIcon:        "icon",
-	}, nil}
+	},
+		nil,
+		nil,
+	}
 
 	options, _, err := webauthn.BeginRegistration(user, WithConveyancePreference(protocol.PreferDirectAttestation))
 
@@ -145,7 +154,10 @@ func TestRegistration_BeginRegistrationCredentialDescriptorOption(t *testing.T) 
 		RPID:          "http://localhost",
 		RPDisplayName: "Test Relying Party",
 		RPIcon:        "icon",
-	}, nil}
+	},
+		nil,
+		nil,
+	}
 
 	excludeList := make([]protocol.CredentialDescriptor, 2)
 	excludeList[0] = protocol.CredentialDescriptor{
