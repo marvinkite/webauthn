@@ -5,8 +5,8 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/x509"
-	"github.com/duo-labs/webauthn/cbor_options"
-	"github.com/duo-labs/webauthn/protocol/webauthncose"
+	"gitlab.com/hanko/webauthn/cbor_options"
+	"gitlab.com/hanko/webauthn/protocol/webauthncose"
 )
 
 var u2fAttestationKey = "fido-u2f"

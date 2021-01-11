@@ -9,7 +9,7 @@ import (
 	"encoding/asn1"
 	"encoding/pem"
 	"fmt"
-	"github.com/duo-labs/webauthn/cbor_options"
+	"gitlab.com/hanko/webauthn/cbor_options"
 	"hash"
 	"math/big"
 

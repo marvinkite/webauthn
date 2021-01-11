@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"bytes"
-	"github.com/duo-labs/webauthn/protocol"
+	"gitlab.com/hanko/webauthn/protocol"
 )
 
 func TestRegistration_FinishRegistrationFailure(t *testing.T) {

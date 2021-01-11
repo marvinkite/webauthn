@@ -1,4 +1,4 @@
-module github.com/duo-labs/webauthn
+module gitlab.com/hanko/webauthn
 
 require (
 	github.com/cloudflare/cfssl v0.0.0-20190726000631-633726f6bcb7

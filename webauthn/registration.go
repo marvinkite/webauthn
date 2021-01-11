@@ -5,8 +5,8 @@ import (
 	"encoding/base64"
 	"net/http"
 
-	"github.com/duo-labs/webauthn/protocol"
-	"github.com/duo-labs/webauthn/protocol/webauthncose"
+	"gitlab.com/hanko/webauthn/protocol"
+	"gitlab.com/hanko/webauthn/protocol/webauthncose"
 )
 
 // BEGIN REGISTRATION
@@ -63,9 +63,11 @@ func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOptio
 
 	response := protocol.CredentialCreation{Response: creationOptions}
 	newSessionData := SessionData{
-		Challenge: base64.RawURLEncoding.EncodeToString(challenge),
-		UserID:    user.WebAuthnID(),
-		UserVerification: creationOptions.AuthenticatorSelection.UserVerification,
+		Challenge:               base64.RawURLEncoding.EncodeToString(challenge),
+		UserID:                  user.WebAuthnID(),
+		UserVerification:        creationOptions.AuthenticatorSelection.UserVerification,
+		ConveyancePreference:    creationOptions.Attestation,
+		AuthenticatorAttachment: authSelection.AuthenticatorAttachment,
 	}
 
 	return &response, &newSessionData, nil

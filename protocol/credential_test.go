@@ -3,8 +3,8 @@ package protocol
 import (
 	"bytes"
 	"encoding/base64"
-	"github.com/duo-labs/webauthn/cbor_options"
-	"github.com/duo-labs/webauthn/metadata"
+	"gitlab.com/hanko/webauthn/cbor_options"
+	"gitlab.com/hanko/webauthn/metadata"
 	uuid "github.com/satori/go.uuid"
 	"io/ioutil"
 	"net/http"

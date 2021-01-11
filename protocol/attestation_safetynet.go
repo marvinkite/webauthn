@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/duo-labs/webauthn/metadata"
+	"gitlab.com/hanko/webauthn/metadata"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/mitchellh/mapstructure"

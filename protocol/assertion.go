@@ -8,7 +8,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/duo-labs/webauthn/protocol/webauthncose"
+	"gitlab.com/hanko/webauthn/protocol/webauthncose"
 )
 
 // The raw response returned to us from an authenticator when we request a
