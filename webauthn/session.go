@@ -1,6 +1,6 @@
 package webauthn
 
-import "github.com/duo-labs/webauthn/protocol"
+import "gitlab.com/hanko/webauthn/protocol"
 
 // SessionData is the data that should be stored by the Relying Party for
 // the duration of the web authentication ceremony

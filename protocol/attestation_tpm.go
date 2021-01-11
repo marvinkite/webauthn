@@ -10,9 +10,9 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/duo-labs/webauthn/protocol/webauthncose"
+	"gitlab.com/hanko/webauthn/protocol/webauthncose"
 
-	"github.com/duo-labs/webauthn/protocol/googletpm"
+	"gitlab.com/hanko/webauthn/protocol/googletpm"
 )
 
 var tpmAttestationKey = "tpm"

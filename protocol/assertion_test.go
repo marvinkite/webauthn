@@ -3,7 +3,7 @@ package protocol
 import (
 	"bytes"
 	"encoding/base64"
-	"github.com/duo-labs/webauthn/cbor_options"
+	"gitlab.com/hanko/webauthn/cbor_options"
 	"io/ioutil"
 	"net/http"
 	"reflect"

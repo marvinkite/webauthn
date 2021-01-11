@@ -2,11 +2,11 @@ package webauthn
 
 import (
 	"fmt"
-	"github.com/duo-labs/webauthn/cbor_options"
-	"github.com/duo-labs/webauthn/metadata"
+	"gitlab.com/hanko/webauthn/cbor_options"
+	"gitlab.com/hanko/webauthn/metadata"
 	"net/url"
 
-	"github.com/duo-labs/webauthn/protocol"
+	"gitlab.com/hanko/webauthn/protocol"
 )
 
 var defaultTimeout = 60000

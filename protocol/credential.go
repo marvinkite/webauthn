@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/duo-labs/webauthn/metadata"
+	"gitlab.com/hanko/webauthn/metadata"
 	uuid "github.com/satori/go.uuid"
 	"io"
 	"net/http"
