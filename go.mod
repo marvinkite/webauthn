@@ -1,6 +1,7 @@
 module gitlab.com/hanko/webauthn
 
 require (
+	github.com/biter777/countries v1.3.4
 	github.com/cloudflare/cfssl v0.0.0-20190726000631-633726f6bcb7
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fxamacker/cbor/v2 v2.2.0
