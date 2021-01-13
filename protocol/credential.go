@@ -3,9 +3,13 @@ package protocol
 import (
 	"crypto/sha256"
 	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/asn1"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/cloudflare/cfssl/scan/crypto/sha1"
 	"gitlab.com/hanko/webauthn/metadata"
 	uuid "github.com/satori/go.uuid"
 	"io"
@@ -266,12 +270,56 @@ func GetMetadataStatement(pcc *ParsedCredentialCreationData, metadataService met
 		return nil
 	}
 	if aaguid.String() == "00000000-0000-0000-0000-000000000000" {
-		metadataStatement := metadataService.U2FAuthenticator("")
+		attestationCertificateKeyIdentifier, err := GenerateAttestationCertificateKeyIdentifier(pcc)
+		if err != nil {
+			return nil
+		}
+		metadataStatement := metadataService.U2FAuthenticator(attestationCertificateKeyIdentifier)
 		return metadataStatement
 	} else {
 		metadataStatement := metadataService.WebAuthnAuthenticator(aaguid.String())
 		return metadataStatement
 	}
+}
+
+func GenerateAttestationCertificateKeyIdentifier(pcc *ParsedCredentialCreationData) (string, error) {
+	x5c, x5cPresent := pcc.Response.AttestationObject.AttStatement["x5c"].([]interface{})
+	if !x5cPresent {
+		return "", fmt.Errorf("no Attestation Certificate found")
+	}
+	var attCert *x509.Certificate
+	for i, attCertInterfaceBytes := range x5c {
+		attCertBytes := attCertInterfaceBytes.([]byte)
+		cert, err := x509.ParseCertificate(attCertBytes)
+		if err != nil {
+			return "", err
+		}
+		if i == 0 {
+			attCert = cert
+		}
+	}
+
+	if attCert == nil {
+		return "", fmt.Errorf("no Attestation Certificate found")
+	}
+
+	spkiASN1, err := x509.MarshalPKIXPublicKey(attCert.PublicKey)
+	if err != nil {
+		return "", err
+	}
+
+	var spki struct {
+		Algorithm        pkix.AlgorithmIdentifier
+		SubjectPublicKey asn1.BitString
+	}
+
+	_, err = asn1.Unmarshal(spkiASN1, &spki)
+	if err != nil {
+		return "", err
+	}
+
+	skid := sha1.Sum(spki.SubjectPublicKey.Bytes)
+	return hex.EncodeToString(skid[:]), nil
 }
 
 func VerifyX509CertificateChainAgainstMetadata(metadataStatement *metadata.MetadataStatement, x5c []interface{}) error {

@@ -3,9 +3,9 @@ package protocol
 import (
 	"bytes"
 	"encoding/base64"
+	uuid "github.com/satori/go.uuid"
 	"gitlab.com/hanko/webauthn/cbor_options"
 	"gitlab.com/hanko/webauthn/metadata"
-	uuid "github.com/satori/go.uuid"
 	"io/ioutil"
 	"net/http"
 	"reflect"
@@ -668,6 +668,46 @@ func TestVerifyX509CertificateChainAgainstMetadata_empty_x5c(t *testing.T) {
 	}
 }
 
+func TestGenerateAttestationCertificateKeyIdentifier(t *testing.T) {
+	reqBody := ioutil.NopCloser(bytes.NewReader([]byte(registrationResponseString)))
+	httpReq := &http.Request{Body: reqBody}
+
+	parsedCredentialCreationResponse, err := ParseCredentialCreationResponse(httpReq)
+	if err != nil {
+		t.Errorf("Error while parsing response: %v", err)
+		return
+	}
+	type args struct {
+		pcc *ParsedCredentialCreationData
+	}
+
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "Success",
+			args: args{
+				pcc: parsedCredentialCreationResponse,
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			identifier, err := GenerateAttestationCertificateKeyIdentifier(tt.args.pcc)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GenerateAttestationCertificateKeyIdentifier() error = %+v, wantErr %v", err, tt.wantErr)
+			}
+			if identifier != "7295499531c0fb059d6c88d1b29665547757c6c6" {
+				t.Errorf("GenerateAttestationCertificateKeyIdentifier() got = '%v', want = '7295499531c0fb059d6c88d1b29665547757c6c6'", identifier)
+			}
+		})
+	}
+}
+
 var defaultMetadataService = &TestMetadataService{}
 
 type TestMetadataService struct {
@@ -720,10 +760,9 @@ var metadataStatement = &metadata.MetadataStatement{
 }
 
 type testCredentialStore struct {
-
 }
 
-func (store *testCredentialStore)ExistsCredential(credentialId []byte) bool {
+func (store *testCredentialStore) ExistsCredential(credentialId []byte) bool {
 	storedId, _ := base64.RawURLEncoding.DecodeString("6xrtBhJQW6QU4tOaB4rrHaS2Ks0yDDL_q8jDC16DEjZ-VLVf4kCRkvl2xp2D71sTPYns-exsHQHTy3G-zJRK8g")
 	if bytes.Equal(credentialId, storedId) {
 		return true
@@ -731,3 +770,14 @@ func (store *testCredentialStore)ExistsCredential(credentialId []byte) bool {
 		return false
 	}
 }
+
+var registrationResponseString = `
+	{
+		"id": "bhyefcOIdulv0rYy63let_trQD8vPX0y7M_Ho8msEFFZ8gAZ2HMfn0t1nyve5w4IlUDvrqam5g727guWstT2HQ",
+		"rawId": "bhyefcOIdulv0rYy63let_trQD8vPX0y7M_Ho8msEFFZ8gAZ2HMfn0t1nyve5w4IlUDvrqam5g727guWstT2HQ",
+		"type":"public-key",
+		"response": {
+			"attestationObject": "o2NmbXRoZmlkby11MmZnYXR0U3RtdKJjc2lnWEcwRQIgUTpi6aL2YtXTcHFRU5jq7kzZK5Qr9uFN-NdZDpMuAJgCIQCAwyNEbo8tAeKVnTW1YVLDsZFWQ21Xi9m5p6x0H07MMmN4NWOBWQLAMIICvDCCAaSgAwIBAgIEA63wEjANBgkqhkiG9w0BAQsFADAuMSwwKgYDVQQDEyNZdWJpY28gVTJGIFJvb3QgQ0EgU2VyaWFsIDQ1NzIwMDYzMTAgFw0xNDA4MDEwMDAwMDBaGA8yMDUwMDkwNDAwMDAwMFowbTELMAkGA1UEBhMCU0UxEjAQBgNVBAoMCVl1YmljbyBBQjEiMCAGA1UECwwZQXV0aGVudGljYXRvciBBdHRlc3RhdGlvbjEmMCQGA1UEAwwdWXViaWNvIFUyRiBFRSBTZXJpYWwgNjE3MzA4MzQwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAQZnoecFi233DnuSkKgRhalswn-ygkvdr4JSPltbpXK5MxlzVSgWc-9x8mzGysdbBhEecLAYfQYqpVLWWosHPoXo2wwajAiBgkrBgEEAYLECgIEFTEuMy42LjEuNC4xLjQxNDgyLjEuNzATBgsrBgEEAYLlHAIBAQQEAwIEMDAhBgsrBgEEAYLlHAEBBAQSBBD6K5ncnjlCV4-SSjDSPEEYMAwGA1UdEwEB_wQCMAAwDQYJKoZIhvcNAQELBQADggEBACjrs2f-0djw4onryp_22AdXxg6a5XyxcoybHDjKu72E2SN9qDGsIZSfDy38DDFr_bF1s25joiu7WA6tylKA0HmEDloeJXJiWjv7h2Az2_siqWnJOLic4XE1lAChJS2XAqkSk9VFGelg3SLOiifrBet-ebdQwAL-2QFrcR7JrXRQG9kUy76O2VcSgbdPROsHfOYeywarhalyVSZ-6OOYK_Q_DLIaOC0jXrnkzm2ymMQFQlBAIysrYeEM1wxiFbwDt-lAcbcOEtHEf5ZlWi75nUzlWn8bSx_5FO4TbZ5hIEcUiGRpiIBEMRZlOIm4ZIbZycn_vJOFRTVps0V0S4ygtDdoYXV0aERhdGFYxHSm6pITyZwvdLIkkrMgz0AmKpTBqVCgOX8pJQtghB7wQQAAAAAAAAAAAAAAAAAAAAAAAAAAAEBuHJ59w4h26W_StjLreV63-2tAPy89fTLsz8ejyawQUVnyABnYcx-fS3WfK97nDgiVQO-upqbmDvbuC5ay1PYdpQECAyYgASFYIOTMALEN44svHfeaakgiI-DFLyg5dzylHgXyi8ebZ0csIlggZK1-s46igwq-g0_mF86gh2KEElcyJ4rqx1nLfhiHX8M",
+			"clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiZk5hX1J2bHhvSGFEZkgxR2E3akE5LVVmWFVaRXcwaWVjZ2dDY1NGVjR6SSIsIm9yaWdpbiI6Imh0dHBzOi8vd2ViYXV0aG4uaW8iLCJjcm9zc09yaWdpbiI6ZmFsc2V9"
+		}
+	}`
