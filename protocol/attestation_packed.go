@@ -5,11 +5,12 @@ import (
 	"crypto/x509"
 	"encoding/asn1"
 	"fmt"
+	"github.com/biter777/countries"
 	"strings"
 	"time"
 
-	"gitlab.com/hanko/webauthn/metadata"
 	uuid "github.com/satori/go.uuid"
+	"gitlab.com/hanko/webauthn/metadata"
 
 	"gitlab.com/hanko/webauthn/protocol/webauthncose"
 )
@@ -125,9 +126,10 @@ func handleBasicAttestation(signature, clientDataHash, authData, aaguid []byte, 
 	// 	Subject-C
 	// 	ISO 3166 code specifying the country where the Authenticator vendor is incorporated (PrintableString)
 
-	//  TODO: Find a good, useable, country code library. For now, check stringy-ness
 	subjectString := strings.Join(attCert.Subject.Country, "")
-	if subjectString == "" {
+	country := countries.ByName(subjectString)
+	// check for length needed, because countries.ByName also returns when a country name is given, so we only accept the ISO 3166-1 (Alpha-2, Alpha-3) country codes
+	if country == countries.Unknown || len(subjectString) > 3 || len(subjectString) < 2 {
 		return attestationType, x5c, ErrAttestationCertificate.WithDetails("Attestation Certificate Country Code is invalid")
 	}
 
