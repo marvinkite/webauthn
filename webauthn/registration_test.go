@@ -37,6 +37,7 @@ func TestRegistration_BeginRegistrationDefaultOptions(t *testing.T) {
 	},
 		nil,
 		nil,
+		nil,
 	}
 	options, sessionData, err := webauthn.BeginRegistration(user)
 
@@ -89,6 +90,7 @@ func TestRegistration_BeginRegistrationAuthenticatorSelectionOption(t *testing.T
 	},
 		nil,
 		nil,
+		nil,
 	}
 
 	authenticatorSelection := protocol.AuthenticatorSelection{
@@ -132,6 +134,7 @@ func TestRegistration_BeginRegistrationConveyancePreferenceOption(t *testing.T) 
 	},
 		nil,
 		nil,
+		nil,
 	}
 
 	options, _, err := webauthn.BeginRegistration(user, WithConveyancePreference(protocol.PreferDirectAttestation))
@@ -155,6 +158,7 @@ func TestRegistration_BeginRegistrationCredentialDescriptorOption(t *testing.T) 
 		RPDisplayName: "Test Relying Party",
 		RPIcon:        "icon",
 	},
+		nil,
 		nil,
 		nil,
 	}

@@ -6,8 +6,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"gitlab.com/hanko/webauthn/metadata"
 	uuid "github.com/satori/go.uuid"
+	"gitlab.com/hanko/webauthn/metadata"
 	"io"
 	"net/http"
 )
@@ -104,7 +104,7 @@ func ParseCredentialCreationResponseBody(body io.Reader) (*ParsedCredentialCreat
 
 // Verifies the Client and Attestation data as laid out by §7.1. Registering a new credential
 // https://www.w3.org/TR/webauthn/#registering-a-new-credential
-func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUser bool, relyingPartyID, relyingPartyOrigin string, metadataService metadata.MetadataService, credentialStore CredentialStore) error {
+func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUser bool, relyingPartyID, relyingPartyOrigin string, metadataService metadata.MetadataService, credentialStore CredentialStore, rpPolicy RelyingPartyPolicy) error {
 
 	// Handles steps 3 through 6 - Verifying the Client Data against the Relying Party's stored data
 	verifyError := pcc.Response.CollectedClientData.Verify(storedChallenge, CreateCeremony, relyingPartyOrigin)
@@ -136,8 +136,9 @@ func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUs
 
 	// TODO: if RelyingPartyPolicy allows any authenticator, then skip step 15 & 16
 	var attestationTrustworthinessError error
+	var metadataStatement *metadata.MetadataStatement
 	if metadataService != nil {
-		metadataStatement := GetMetadataStatement(pcc, metadataService)
+		metadataStatement = GetMetadataStatement(pcc, metadataService)
 		if metadataStatement == nil {
 			attestationTrustworthinessError = ErrMetadataNotFound
 		} else {
@@ -201,12 +202,20 @@ func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUs
 	// associating it with the credentialId and credentialPublicKey in the attestedCredentialData in authData, as
 	// appropriate for the Relying Party's system.
 
+	// Can't be done here, because the library has no database access
+
 	// Step 19. If the attestation statement attStmt successfully verified but is not trustworthy per step 16 above,
 	// the Relying Party SHOULD fail the registration ceremony.
 
-	// TODO: Not implemented for the reasons mentioned under Step 16
-	if attestationTrustworthinessError != nil {
-		return attestationTrustworthinessError
+	if rpPolicy != nil {
+		policyError := rpPolicy.Verify(pcc, attestationTrustworthinessError, metadataStatement)
+		if policyError != nil {
+			return policyError
+		}
+	} else {
+		if attestationTrustworthinessError != nil {
+			return attestationTrustworthinessError
+		}
 	}
 
 	return nil
@@ -266,7 +275,7 @@ func GetMetadataStatement(pcc *ParsedCredentialCreationData, metadataService met
 		return nil
 	}
 	if aaguid.String() == "00000000-0000-0000-0000-000000000000" {
-		metadataStatement := metadataService.U2FAuthenticator("")
+		metadataStatement := metadataService.U2FAuthenticator("") // TODO: generate attestation certificate key identifier
 		return metadataStatement
 	} else {
 		metadataStatement := metadataService.WebAuthnAuthenticator(aaguid.String())
