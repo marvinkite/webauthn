@@ -74,6 +74,10 @@ var (
 		Type:    "credential_already_exists",
 		Details: "The credential already exists",
 	}
+	ErrAuthenticatorNotAllowed = &Error{
+		Type:    "authenticator_not_allowed",
+		Details: "The Authenticator is not allowed",
+	}
 )
 
 func (err *Error) Error() string {

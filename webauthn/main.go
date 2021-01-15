@@ -13,9 +13,10 @@ var defaultTimeout = 60000
 
 // WebAuthn is the primary interface of this package and contains the request handlers that should be called.
 type WebAuthn struct {
-	Config *Config
+	Config          *Config
 	MetadataService metadata.MetadataService
 	CredentialStore protocol.CredentialStore
+	RpPolicy        protocol.RelyingPartyPolicy
 }
 
 // The config values required for proper
@@ -65,16 +66,38 @@ func (config *Config) validate() error {
 }
 
 // Create a new WebAuthn object given the proper config flags
-func New(config *Config, service metadata.MetadataService, credentialStore protocol.CredentialStore) (*WebAuthn, error) {
+func New(config *Config, metadataService metadata.MetadataService, credentialStore protocol.CredentialStore, rpPolicy protocol.RelyingPartyPolicy) (*WebAuthn, error) {
 	if err := config.validate(); err != nil {
 		return nil, fmt.Errorf("Configuration error: %+v", err)
 	}
 	if cbor_options.CborDecModeErr != nil {
 		return nil, fmt.Errorf("Initilization error: %+v", cbor_options.CborDecModeErr)
 	}
+	if err := validateRelyingPartyPolicyRequirements(rpPolicy, metadataService); err != nil {
+		return nil, fmt.Errorf("PolicyRequirements error: %+v", err)
+	}
+
 	return &WebAuthn{
 		config,
-		service,
+		metadataService,
 		credentialStore,
+		rpPolicy,
 	}, nil
+}
+
+func validateRelyingPartyPolicyRequirements(rpPolicy protocol.RelyingPartyPolicy, metadataService metadata.MetadataService) error {
+	switch rpPolicy.(type) {
+	case protocol.AllowAllPolicy:
+		return nil
+	case protocol.WhitelistPolicy:
+		if metadataService == nil {
+			return fmt.Errorf("MetadataService must be provided for WhitelistPolicy")
+		}
+	case protocol.AllowOnlyAuthenticatorFromMetadataServicePolicy:
+		if metadataService == nil {
+			return fmt.Errorf("MetadataService must be provided for AllowOnlyAuthenticatorFromMetadataServicePolicy")
+		}
+	}
+
+	return nil
 }
