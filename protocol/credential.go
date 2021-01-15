@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/cloudflare/cfssl/scan/crypto/sha1"
-	"gitlab.com/hanko/webauthn/metadata"
 	uuid "github.com/satori/go.uuid"
 	"gitlab.com/hanko/webauthn/metadata"
 	"io"
