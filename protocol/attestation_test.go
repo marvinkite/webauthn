@@ -30,7 +30,7 @@ func TestAttestationVerify(t *testing.T) {
 			pcc.Response = *parsedAttestationResponse
 
 			// Test Base Verification
-			err = pcc.Verify(options.Response.Challenge.String(), false, options.Response.RelyingParty.ID, options.Response.RelyingParty.Name, nil, nil)
+			err = pcc.Verify(options.Response.Challenge.String(), false, options.Response.RelyingParty.ID, options.Response.RelyingParty.Name, nil, nil, nil)
 			if err != nil {
 				t.Fatalf("Not valid: %+v (%+s)", err, err.(*Error).DevInfo)
 			}
@@ -83,7 +83,7 @@ func TestPackedAttestationVerification(t *testing.T) {
 var testAttestationOptions = []string{
 	// Direct Self Attestation with EC256 - MacOS
 	`{"publicKey": {
-		"challenge": "rWiex8xDOPfiCgyFu4BLW6vVOmXKgPwHrlMCgEs9SBA=",
+		"challenge": "rWiex8xDOPfiCgyFu4BLW6vVOmXKgPwHrlMCgEs9SBA",
 		"rp": {
 		"name": "http://localhost:9005",
 		"id": "localhost"
@@ -91,7 +91,7 @@ var testAttestationOptions = []string{
 		"user": {
 			"name": "self",
 			"displayName": "self",
-			"id": "2iEAAAAAAAAAAA=="
+			"id": "2iEAAAAAAAAAAA"
 		},
 		"pubKeyCredParams": [
 			{
@@ -108,7 +108,7 @@ var testAttestationOptions = []string{
 	}}`,
 	// Direct Attestation with EC256
 	`{"publicKey": {
-		"challenge": "+Ri5NZTzJ8b6mvW3TVScLotEoALfgBa2Bn4YSaIObHc=",
+		"challenge": "-Ri5NZTzJ8b6mvW3TVScLotEoALfgBa2Bn4YSaIObHc",
 		"rp": {
 		"name": "https://webauthn.io",
 		"id": "webauthn.io"
@@ -116,7 +116,7 @@ var testAttestationOptions = []string{
 		"user": {
 			"name": "flort",
 			"displayName": "flort",
-			"id": "1DMAAAAAAAAAAA=="
+			"id": "1DMAAAAAAAAAAA"
 		},
 		"pubKeyCredParams": [
 			{
@@ -134,7 +134,7 @@ var testAttestationOptions = []string{
 	// None Attestation with EC256
 	`{
 		"publicKey": {
-		  "challenge": "sVt4ScceMzqFSnfAq8hgLzblvo3fa4/aFVEcIESHIJ0=",
+		  "challenge": "sVt4ScceMzqFSnfAq8hgLzblvo3fa4_aFVEcIESHIJ0",
 		  "rp": {
 			"name": "https://webauthn.io",
 			"id": "webauthn.io"
@@ -142,7 +142,7 @@ var testAttestationOptions = []string{
 		  "user": {
 			"name": "testuser1",
 			"displayName": "testuser1",
-			"id": "1zMAAAAAAAAAAA=="
+			"id": "1zMAAAAAAAAAAA"
 		  },
 		  "pubKeyCredParams": [
 			{

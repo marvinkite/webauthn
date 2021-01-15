@@ -340,7 +340,7 @@ func TestParsedCredentialCreationData_Verify(t *testing.T) {
 				Response:                  tt.fields.Response,
 				Raw:                       tt.fields.Raw,
 			}
-			if err := pcc.Verify(tt.args.storedChallenge.String(), tt.args.verifyUser, tt.args.relyingPartyID, tt.args.relyingPartyOrigin, nil, tt.args.credentialStore); (err != nil) != tt.wantErr {
+			if err := pcc.Verify(tt.args.storedChallenge.String(), tt.args.verifyUser, tt.args.relyingPartyID, tt.args.relyingPartyOrigin, nil, tt.args.credentialStore, nil); (err != nil) != tt.wantErr {
 				t.Errorf("ParsedCredentialCreationData.Verify() error = %+v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -629,7 +629,7 @@ func TestParsedCredentialCreationData_Verify_With_Metadata(t *testing.T) {
 				Response:                  tt.fields.Response,
 				Raw:                       tt.fields.Raw,
 			}
-			if err := pcc.Verify(tt.args.storedChallenge.String(), tt.args.verifyUser, tt.args.relyingPartyID, tt.args.relyingPartyOrigin, tt.args.metadataService, nil); (err != nil) != tt.wantErr {
+			if err := pcc.Verify(tt.args.storedChallenge.String(), tt.args.verifyUser, tt.args.relyingPartyID, tt.args.relyingPartyOrigin, tt.args.metadataService, nil, nil); (err != nil) != tt.wantErr {
 				t.Errorf("ParsedCredentialCreationData.Verify() error = %+v, wantErr %v", err, tt.wantErr)
 			}
 		})
