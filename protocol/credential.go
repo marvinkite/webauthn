@@ -371,6 +371,7 @@ func VerifyX509CertificateChainAgainstMetadata(metadataStatement *metadata.Metad
 	verifyOpts := x509.VerifyOptions{
 		Intermediates: intermediateCerts,
 		Roots:         trustAnchorPool,
+		KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
 	}
 	if _, err := attCert.Verify(verifyOpts); err != nil {
 		return ErrAttestation.WithDetails(fmt.Sprintf("Error validating certificate chain: %+v", err))
