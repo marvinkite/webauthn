@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"time"
 
-	"gitlab.com/hanko/webauthn/metadata"
-
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/mitchellh/mapstructure"
 )
@@ -129,12 +127,7 @@ func verifySafetyNetFormat(att AttestationObject, clientDataHash []byte) (string
 		// zero tolerance for post-dated timestamps
 		return "Basic attestation with SafetyNet", nil, ErrInvalidAttestation.WithDetails("SafetyNet response with timestamp after current time")
 	} else if t.Before(oneMinuteAgo) {
-		// allow old timestamp for testing purposes
-		// TODO: Make this user configurable
-		msg := "SafetyNet response with timestamp before one minute ago"
-		if metadata.Conformance {
-			return "Basic attestation with SafetyNet", nil, ErrInvalidAttestation.WithDetails(msg)
-		}
+		return "Basic attestation with SafetyNet", nil, ErrInvalidAttestation.WithDetails("SafetyNet response with timestamp before one minute ago")
 	}
 
 	// §8.5.7 If successful, return implementation-specific values representing attestation type Basic and attestation
