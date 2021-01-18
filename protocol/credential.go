@@ -368,6 +368,15 @@ func VerifyX509CertificateChainAgainstMetadata(metadataStatement *metadata.Metad
 		return ErrAttestation.WithDetails("Error no attestation certificate found in x5c certificate chain")
 	}
 
+	// TODO: maybe we shouldn't delete the unhandledCriticalExtensions right away, we should perform validation with requirements from https://www.w3.org/TR/webauthn-1/#tpm-cert-requirements
+	if len(attCert.UnhandledCriticalExtensions) > 0 {
+		for i, unhandledCriticalExtensions := range attCert.UnhandledCriticalExtensions {
+			if unhandledCriticalExtensions.String() == "2.5.29.17" {
+				attCert.UnhandledCriticalExtensions = remove(attCert.UnhandledCriticalExtensions, i)
+			}
+		} 
+	}
+
 	verifyOpts := x509.VerifyOptions{
 		Intermediates: intermediateCerts,
 		Roots:         trustAnchorPool,
@@ -377,4 +386,8 @@ func VerifyX509CertificateChainAgainstMetadata(metadataStatement *metadata.Metad
 		return ErrAttestation.WithDetails(fmt.Sprintf("Error validating certificate chain: %+v", err))
 	}
 	return nil
+}
+func remove(slice []asn1.ObjectIdentifier, i int) []asn1.ObjectIdentifier {
+	copy (slice[i:], slice[i+1:])
+	return slice[:len(slice)-1]
 }
