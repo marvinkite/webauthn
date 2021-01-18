@@ -21,14 +21,14 @@ func Test_verifySafetyNetFormat(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			"success",
+			"timed out",
 			args{
 				successAttResponse,
 				successClienDataHash[:],
 			},
 			"Basic attestation with SafetyNet",
 			nil,
-			false,
+			true,
 		},
 	}
 	for _, tt := range tests {
