@@ -143,7 +143,7 @@ func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUs
 	var metadataStatement *metadata.MetadataStatement
 	if metadataService != nil {
 		metadataStatement = GetMetadataStatement(pcc, metadataService)
-		if metadataStatement == nil {
+		if metadataStatement == nil && pcc.Response.AttestationObject.Format != "none" {
 			attestationTrustworthinessError = ErrMetadataNotFound
 		} else {
 
