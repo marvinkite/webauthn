@@ -1,6 +1,7 @@
 package protocol
 
 import (
+	"encoding/base64"
 	"fmt"
 	"net/url"
 	"strings"
@@ -69,6 +70,22 @@ func (c *CollectedClientData) Verify(storedChallenge string, ceremony CeremonyTy
 		return err
 	}
 
+	challenge := c.Challenge
+	// NOT-NORMATIVE
+	// Verify that C.challenge is not an empty string
+	if challenge == "" {
+		err := ErrVerification.WithDetails("Error validating challenge")
+		return err.WithInfo("Expected CollectedClientData.Challenge not be an empty string")
+	}
+
+	// NOT-NORMATIVE
+	// Verify that C.challenge is base64url encoded
+	_, base64Err := base64.RawURLEncoding.DecodeString(challenge)
+	if base64Err != nil {
+		err := ErrVerification.WithDetails("Error validating challenge")
+		return err.WithInfo("Expected CollectedClientData.Challenge to be base64url encoded")
+	}
+
 	// Registration Step 4. Verify that the value of C.challenge matches the challenge
 	// that was sent to the authenticator in the create() call.
 
@@ -76,7 +93,6 @@ func (c *CollectedClientData) Verify(storedChallenge string, ceremony CeremonyTy
 	// that was sent to the authenticator in the PublicKeyCredentialRequestOptions
 	// passed to the get() call.
 
-	challenge := c.Challenge
 	if 0 != strings.Compare(storedChallenge, challenge) {
 		err := ErrVerification.WithDetails("Error validating challenge")
 		return err.WithInfo(fmt.Sprintf("Expected b Value: %#v\nReceived b: %#v\n", storedChallenge, challenge))
