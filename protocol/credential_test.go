@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	uuid "github.com/satori/go.uuid"
 	"gitlab.com/hanko/webauthn/cbor_options"
+	"gitlab.com/hanko/webauthn/credential"
 	"gitlab.com/hanko/webauthn/metadata"
 	"io/ioutil"
 	"net/http"
@@ -156,7 +157,7 @@ func TestParsedCredentialCreationData_Verify(t *testing.T) {
 		verifyUser         bool
 		relyingPartyID     string
 		relyingPartyOrigin string
-		credentialStore    CredentialStore
+		credentialStore    credential.CredentialService
 	}
 	tests := []struct {
 		name    string
@@ -760,6 +761,14 @@ var metadataStatement = &metadata.MetadataStatement{
 }
 
 type testCredentialStore struct {
+}
+
+func (store *testCredentialStore) GetCredential(credentialId []byte) (*credential.Credential, []byte) {
+	return nil, nil
+}
+
+func (store *testCredentialStore) GetCredentialForUser(userId []byte) []credential.Credential {
+	return nil
 }
 
 func (store *testCredentialStore) ExistsCredential(credentialId []byte) bool {

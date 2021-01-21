@@ -3,6 +3,7 @@ package webauthn
 import (
 	"fmt"
 	"gitlab.com/hanko/webauthn/cbor_options"
+	"gitlab.com/hanko/webauthn/credential"
 	"gitlab.com/hanko/webauthn/metadata"
 	"net/url"
 
@@ -13,10 +14,10 @@ var defaultTimeout = 60000
 
 // WebAuthn is the primary interface of this package and contains the request handlers that should be called.
 type WebAuthn struct {
-	Config          *Config
-	MetadataService metadata.MetadataService
-	CredentialStore protocol.CredentialStore
-	RpPolicy        protocol.RelyingPartyPolicy
+	Config            *Config
+	MetadataService   metadata.MetadataService
+	CredentialService credential.CredentialService
+	RpPolicy          protocol.RelyingPartyPolicy
 }
 
 // The config values required for proper
@@ -66,22 +67,25 @@ func (config *Config) validate() error {
 }
 
 // Create a new WebAuthn object given the proper config flags
-func New(config *Config, metadataService metadata.MetadataService, credentialStore protocol.CredentialStore, rpPolicy protocol.RelyingPartyPolicy) (*WebAuthn, error) {
+func New(config *Config, metadataService metadata.MetadataService, credentialService credential.CredentialService, rpPolicy protocol.RelyingPartyPolicy) (*WebAuthn, error) {
 	if err := config.validate(); err != nil {
 		return nil, fmt.Errorf("Configuration error: %+v", err)
 	}
 	if cbor_options.CborDecModeErr != nil {
 		return nil, fmt.Errorf("Initilization error: %+v", cbor_options.CborDecModeErr)
 	}
+	if credentialService == nil {
+		return nil, fmt.Errorf("CredentialService must not be nil")
+	}
 	if err := validateRelyingPartyPolicyRequirements(rpPolicy, metadataService); err != nil {
 		return nil, fmt.Errorf("PolicyRequirements error: %+v", err)
 	}
 
 	return &WebAuthn{
-		config,
-		metadataService,
-		credentialStore,
-		rpPolicy,
+		Config:            config,
+		MetadataService:   metadataService,
+		CredentialService: credentialService,
+		RpPolicy:          rpPolicy,
 	}, nil
 }
 

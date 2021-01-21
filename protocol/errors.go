@@ -78,6 +78,14 @@ var (
 		Type:    "authenticator_not_allowed",
 		Details: "The Authenticator is not allowed",
 	}
+	ErrCredentialNotFound = &Error{
+		Type:    "credential_not_found",
+		Details: "The credential could not be found.",
+	}
+	ErrCounterError = &Error{
+		Type:    "counter_not_updated",
+		Details: "The Counter is not valid, because it was not updated.",
+	}
 )
 
 func (err *Error) Error() string {

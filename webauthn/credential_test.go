@@ -1,6 +1,7 @@
 package webauthn
 
 import (
+	"gitlab.com/hanko/webauthn/credential"
 	"reflect"
 	"testing"
 
@@ -14,7 +15,7 @@ func TestMakeNewCredential(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *Credential
+		want    *credential.Credential
 		wantErr bool
 	}{
 		// TODO: Add test cases.

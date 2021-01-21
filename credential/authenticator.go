@@ -1,7 +1,7 @@
-package webauthn
+package credential
 
 import (
-	p "gitlab.com/hanko/webauthn/protocol"
+	"errors"
 )
 
 type Authenticator struct {
@@ -13,20 +13,10 @@ type Authenticator struct {
 	// signCount value is less than or equal to the stored value, a cloned authenticator may
 	// exist, or the authenticator may be malfunctioning.
 	SignCount uint32
-	// CloneWarning - This is a signal that the authenticator may be cloned, i.e. at least two copies of the
-	// credential private key may exist and are being used in parallel. Relying Parties should incorporate
-	// this information into their risk scoring. Whether the Relying Party updates the stored signature
-	// counter value in this case, or not, or fails the authentication ceremony or not, is Relying Party-specific.
-	CloneWarning bool
 }
 
-// Allow for easy marhsalling of authenticator options that are provided to the user
-func SelectAuthenticator(att string, rrk *bool, uv string) p.AuthenticatorSelection {
-	return p.AuthenticatorSelection{
-		AuthenticatorAttachment: p.AuthenticatorAttachment(att),
-		RequireResidentKey:      rrk,
-		UserVerification:        p.UserVerificationRequirement(uv),
-	}
+func (a *Authenticator) UpdateCounter(authDataCount uint32) {
+	a.SignCount = authDataCount
 }
 
 // VerifyCounter
@@ -41,10 +31,10 @@ func SelectAuthenticator(att string, rrk *bool, uv string) p.AuthenticatorSelect
 //  authData.signCount.
 //
 //  → Less than or equal to the signature counter value stored in conjunction with credential’s id attribute.
-//  This is a signal that the authenticator may be cloned, see CloneWarning above for more information.
-func (a *Authenticator) UpdateCounter(authDataCount uint32) {
+//  This is a signal that the authenticator may be cloned.
+func (a *Authenticator) CheckCounter(authDataCount uint32) error {
 	if authDataCount <= a.SignCount && (authDataCount != 0 || a.SignCount != 0) {
-		a.CloneWarning = true
+		return errors.New("Counter was not updated.")
 	}
-	a.SignCount = authDataCount
+	return nil
 }
