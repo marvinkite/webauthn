@@ -3,6 +3,7 @@ package webauthn
 import (
 	"bytes"
 	"encoding/base64"
+	"gitlab.com/hanko/webauthn/credential"
 	"net/http"
 
 	"gitlab.com/hanko/webauthn/protocol"
@@ -103,7 +104,7 @@ func WithExtensions(extension protocol.AuthenticationExtensions) RegistrationOpt
 
 // Take the response from the authenticator and client and verify the credential against the user's credentials and
 // session data.
-func (webauthn *WebAuthn) FinishRegistration(user User, session SessionData, response *http.Request) (*Credential, error) {
+func (webauthn *WebAuthn) FinishRegistration(user User, session SessionData, response *http.Request) (*credential.Credential, error) {
 	parsedResponse, err := protocol.ParseCredentialCreationResponse(response)
 	if err != nil {
 		return nil, err
@@ -113,14 +114,14 @@ func (webauthn *WebAuthn) FinishRegistration(user User, session SessionData, res
 }
 
 // CreateCredential verifies a parsed response against the user's credentials and session data.
-func (webauthn *WebAuthn) CreateCredential(user User, session SessionData, parsedResponse *protocol.ParsedCredentialCreationData) (*Credential, error) {
+func (webauthn *WebAuthn) CreateCredential(user User, session SessionData, parsedResponse *protocol.ParsedCredentialCreationData) (*credential.Credential, error) {
 	if !bytes.Equal(user.WebAuthnID(), session.UserID) {
 		return nil, protocol.ErrBadRequest.WithDetails("ID mismatch for User and Session")
 	}
 
 	shouldVerifyUser := session.UserVerification == protocol.VerificationRequired
 
-	invalidErr := parsedResponse.Verify(session.Challenge, shouldVerifyUser, webauthn.Config.RPID, webauthn.Config.RPOrigin, webauthn.MetadataService, webauthn.CredentialStore, webauthn.RpPolicy)
+	invalidErr := parsedResponse.Verify(session.Challenge, shouldVerifyUser, webauthn.Config.RPID, webauthn.Config.RPOrigin, webauthn.MetadataService, webauthn.CredentialService, webauthn.RpPolicy)
 	if invalidErr != nil {
 		return nil, invalidErr
 	}

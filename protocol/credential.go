@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/cloudflare/cfssl/scan/crypto/sha1"
 	uuid "github.com/satori/go.uuid"
+	"gitlab.com/hanko/webauthn/credential"
 	"gitlab.com/hanko/webauthn/metadata"
 	"io"
 	"net/http"
@@ -108,7 +109,7 @@ func ParseCredentialCreationResponseBody(body io.Reader) (*ParsedCredentialCreat
 
 // Verifies the Client and Attestation data as laid out by §7.1. Registering a new credential
 // https://www.w3.org/TR/webauthn/#registering-a-new-credential
-func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUser bool, relyingPartyID, relyingPartyOrigin string, metadataService metadata.MetadataService, credentialStore CredentialStore, rpPolicy RelyingPartyPolicy) error {
+func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUser bool, relyingPartyID, relyingPartyOrigin string, metadataService metadata.MetadataService, credentialStore credential.CredentialService, rpPolicy RelyingPartyPolicy) error {
 
 	// Handles steps 3 through 6 - Verifying the Client Data against the Relying Party's stored data
 	verifyError := pcc.Response.CollectedClientData.Verify(storedChallenge, CreateCeremony, relyingPartyOrigin)
