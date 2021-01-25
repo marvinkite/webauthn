@@ -2,9 +2,15 @@ package protocol
 
 import (
 	"bytes"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
+	"encoding/binary"
 	"fmt"
+	"gitlab.com/hanko/webauthn/protocol/webauthncose"
+	"math/big"
 	"time"
 )
 
@@ -50,6 +56,7 @@ func verifyAppleAttestationFormat(att AttestationObject, clientDataHash []byte) 
 	for _, ext := range credCert.Extensions {
 		if ext.Id.String() == "1.2.840.113635.100.8.2" {
 			asn1Structure, extensionNonce := ext.Value[:6], ext.Value[6:]
+			// TODO: we shouldn't check against static byte slice, better parse ASN.1 structure
 			// ASN.1 DER Structure
 			// 0x30: TAG = SEQUENCE OF
 			// 0x24: Length = 36 bytes
@@ -69,10 +76,26 @@ func verifyAppleAttestationFormat(att AttestationObject, clientDataHash []byte) 
 	}
 
 	// Step 5. Verify that the credential public key equals the Subject Public Key of credCert.
-	// TODO: doesn't work !!!
-	publicKeyBytes, err := x509.MarshalPKIXPublicKey(credCert.PublicKey)
-	if !bytes.Equal(publicKeyBytes, att.AuthData.AttData.CredentialPublicKey) {
-		return appleAttestationKey, x5c, ErrAttestationCertificate.WithDetails("Certificate Public Key do not match AuthenticatorData.AttestedCredentialData.CredentialPublicKey")
+	key, err := webauthncose.ParsePublicKey(att.AuthData.AttData.CredentialPublicKey)
+	if err != nil {
+		return appleAttestationKey, nil, ErrAttestationFormat.WithDetails(fmt.Sprintf("Error parsing the public key: %+v\n", err))
+	}
+
+	switch key.(type) {
+	case webauthncose.OKPPublicKeyData:
+		k := key.(webauthncose.OKPPublicKeyData)
+		err = verifyOKPPublicKey(credCert.PublicKey, k)
+	case webauthncose.EC2PublicKeyData:
+		k := key.(webauthncose.EC2PublicKeyData)
+		err = verifyEC2PublicKey(credCert.PublicKey, k)
+	case webauthncose.RSAPublicKeyData:
+		k := key.(webauthncose.RSAPublicKeyData)
+		err = verifyRSAPublicKey(credCert.PublicKey, k)
+	default:
+		return appleAttestationKey, nil, ErrInvalidAttestation.WithDetails("Error verifying the public key data")
+	}
+	if err != nil {
+		return appleAttestationKey, nil, err
 	}
 
 	// Step 6. If successful, return implementation-specific values representing attestation type Anonymization CA and
@@ -99,4 +122,54 @@ func parseCertificateChain(x5c []interface{}) ([]x509.Certificate, error) {
 	}
 
 	return certChain, nil
+}
+
+func verifyEC2PublicKey(credCertPublicKey interface{}, data webauthncose.EC2PublicKeyData) error {
+	certPublicKey := credCertPublicKey.(*ecdsa.PublicKey)
+	X, Y := new(big.Int), new(big.Int)
+
+	X = X.SetBytes(data.XCoord)
+	Y = Y.SetBytes(data.YCoord)
+
+	switch certPublicKey.Curve {
+	case elliptic.P256():
+		if data.Curve != 1 {
+			return ErrUnsupportedKey
+		}
+	case elliptic.P384():
+		if data.Curve != 2 {
+			return ErrUnsupportedKey
+		}
+	case elliptic.P521():
+		if data.Curve != 3 {
+			return ErrUnsupportedKey
+		}
+	default:
+		return ErrUnsupportedKey
+	}
+
+	if X.Cmp(certPublicKey.X) != 0 || Y.Cmp(certPublicKey.Y) != 0 {
+		return ErrAttestation.WithDetails("EC Public Key is not equal to certificate public key")
+	}
+
+	return nil
+}
+
+func verifyRSAPublicKey(credCertPublicKey interface{}, data webauthncose.RSAPublicKeyData) error {
+	certPublicKey := credCertPublicKey.(rsa.PublicKey)
+	N := new(big.Int)
+	N = N.SetBytes(data.Modulus)
+	E := int(binary.BigEndian.Uint64(data.Exponent))
+
+	if N.Cmp(certPublicKey.N) != 0 || E != certPublicKey.E {
+		return ErrAttestation.WithDetails("RSA Public Key is not equal to certificate public key")
+	}
+
+	return nil
+}
+
+func verifyOKPPublicKey(credCertPublicKey interface{}, data webauthncose.OKPPublicKeyData) error {
+	//ed25519.PublicKey{}
+
+	return ErrNotImplemented
 }
