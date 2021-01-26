@@ -167,8 +167,7 @@ func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUs
 				}
 			case "apple":
 				// AttCA
-				// TODO: implement apple attestation
-				attestationTrustworthinessError = ErrNotSpecImplemented.WithDetails("Apple Attestation format not implemented")
+				attestationTrustworthinessError = nil
 			case "tpm":
 				// Basic, AttCA
 				attestationTrustworthinessError = verifyBasicOrAttCaAttestation(metadataStatement, pcc)
