@@ -144,7 +144,8 @@ func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUs
 	var metadataStatement *metadata.MetadataStatement
 	if metadataService != nil {
 		metadataStatement = GetMetadataStatement(pcc, metadataService)
-		if metadataStatement == nil && pcc.Response.AttestationObject.Format != "none" {
+		// TODO: When Apple send the right AAGUID, and authenticator is in metadata service, then remove check if format is `apple`
+		if metadataStatement == nil && pcc.Response.AttestationObject.Format != "none" && pcc.Response.AttestationObject.Format != "apple" {
 			attestationTrustworthinessError = ErrMetadataNotFound
 		} else {
 
@@ -167,6 +168,7 @@ func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUs
 				}
 			case "apple":
 				// AttCA
+				// TODO: When Apple send the right AAGUID, and authenticator is in metadata service, then check against metadataService (add verifyBasicOrAttCaAttestation() call)
 				attestationTrustworthinessError = nil
 			case "tpm":
 				// Basic, AttCA
