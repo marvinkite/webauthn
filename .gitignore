@@ -32,3 +32,10 @@
 .history
 
 # End of https://www.gitignore.io/api/go,visualstudiocode
+
+### Intellij (IDEA, GoLand, ...) ###
+/.idea
+
+### macOS ###
+.DS_Store
+
