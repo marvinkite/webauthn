@@ -13,4 +13,6 @@ type Credential struct {
 	AttestationType string
 	// The Authenticator information for a given certificate
 	Authenticator Authenticator
+	// The userId to which the credential is associated with
+	UserId []byte
 }

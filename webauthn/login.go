@@ -130,7 +130,7 @@ func (webauthn *WebAuthn) ValidateLogin(session SessionData, parsedResponse *pro
 	// the owner of the public key credential identified by credential.id.
 	userHandle := parsedResponse.Response.UserHandle
 	if len(userHandle) > 0 {
-		if !bytes.Equal(cred.ID, parsedResponse.Response.UserHandle) {
+		if !bytes.Equal(cred.UserId, parsedResponse.Response.UserHandle) {
 			return nil, nil, protocol.ErrBadRequest.WithDetails("userHandle and User ID do not match")
 		}
 	}

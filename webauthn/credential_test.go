@@ -11,6 +11,7 @@ import (
 func TestMakeNewCredential(t *testing.T) {
 	type args struct {
 		c *protocol.ParsedCredentialCreationData
+		userId []byte
 	}
 	tests := []struct {
 		name    string
@@ -22,7 +23,7 @@ func TestMakeNewCredential(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := MakeNewCredential(tt.args.c)
+			got, err := MakeNewCredential(tt.args.c, tt.args.userId)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MakeNewCredential() error = %v, wantErr %v", err, tt.wantErr)
 				return

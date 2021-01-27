@@ -6,7 +6,7 @@ import (
 )
 
 // MakeNewCredential will return a credential pointer on successful validation of a registration response
-func MakeNewCredential(c *protocol.ParsedCredentialCreationData) (*credential.Credential, error) {
+func MakeNewCredential(c *protocol.ParsedCredentialCreationData, userId []byte) (*credential.Credential, error) {
 
 	newCredential := &credential.Credential{
 		ID:              c.Response.AttestationObject.AuthData.AttData.CredentialID,
@@ -16,6 +16,7 @@ func MakeNewCredential(c *protocol.ParsedCredentialCreationData) (*credential.Cr
 			AAGUID:    c.Response.AttestationObject.AuthData.AttData.AAGUID,
 			SignCount: c.Response.AttestationObject.AuthData.Counter,
 		},
+		UserId: userId,
 	}
 
 	return newCredential, nil
