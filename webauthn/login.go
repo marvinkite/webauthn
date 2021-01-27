@@ -121,7 +121,7 @@ func (webauthn *WebAuthn) ValidateLogin(session SessionData, parsedResponse *pro
 
 	// Step 3. Using credential’s id attribute (or the corresponding rawId, if base64url encoding is inappropriate
 	// for your use case), look up the corresponding credential public key.
-	cred, userId := webauthn.CredentialService.GetCredential(parsedResponse.Response.AuthenticatorData.AttData.CredentialID)
+	cred, userId := webauthn.CredentialService.GetCredential(parsedResponse.RawID)
 	if cred == nil || userId == nil || len(userId) == 0 {
 		return nil, nil, protocol.ErrCredentialNotFound
 	}
