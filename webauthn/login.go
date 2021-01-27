@@ -30,7 +30,10 @@ func (webauthn *WebAuthn) BeginLogin(user User, opts ...LoginOption) (*protocol.
 
 	var credentials []credential.Credential
 	if user != nil {
-		credentials = webauthn.CredentialService.GetCredentialForUser(user.WebAuthnID())
+		credentials, err = webauthn.CredentialService.GetCredentialForUser(user.WebAuthnID())
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 
 	if len(credentials) == 0 && user != nil { // If the user does not have any credentials, we cannot do login
@@ -121,7 +124,10 @@ func (webauthn *WebAuthn) ValidateLogin(session SessionData, parsedResponse *pro
 
 	// Step 3. Using credential’s id attribute (or the corresponding rawId, if base64url encoding is inappropriate
 	// for your use case), look up the corresponding credential public key.
-	cred, userId := webauthn.CredentialService.GetCredential(parsedResponse.RawID)
+	cred, userId, err := webauthn.CredentialService.GetCredential(parsedResponse.RawID)
+	if err != nil {
+		return nil, nil, err
+	}
 	if cred == nil || userId == nil || len(userId) == 0 {
 		return nil, nil, protocol.ErrCredentialNotFound
 	}
@@ -147,7 +153,7 @@ func (webauthn *WebAuthn) ValidateLogin(session SessionData, parsedResponse *pro
 	}
 
 	// Handle step 17
-	err := cred.Authenticator.CheckCounter(parsedResponse.Response.AuthenticatorData.Counter)
+	err = cred.Authenticator.CheckCounter(parsedResponse.Response.AuthenticatorData.Counter)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -197,8 +197,11 @@ func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUs
 	// fail this registration ceremony, or it MAY decide to accept the registration, e.g. while deleting
 	// the older registration.
 	if credentialStore != nil {
-		credential := credentialStore.ExistsCredential(pcc.Response.AttestationObject.AuthData.AttData.CredentialID)
-		if credential {
+		cred, err := credentialStore.ExistsCredential(pcc.Response.AttestationObject.AuthData.AttData.CredentialID)
+		if err != nil {
+			return err
+		}
+		if cred {
 			return ErrCredentialAlreadyExists
 		}
 	}
@@ -376,7 +379,7 @@ func VerifyX509CertificateChainAgainstMetadata(metadataStatement *metadata.Metad
 			if unhandledCriticalExtensions.String() == "2.5.29.17" {
 				attCert.UnhandledCriticalExtensions = remove(attCert.UnhandledCriticalExtensions, i)
 			}
-		} 
+		}
 	}
 
 	verifyOpts := x509.VerifyOptions{
@@ -390,6 +393,6 @@ func VerifyX509CertificateChainAgainstMetadata(metadataStatement *metadata.Metad
 	return nil
 }
 func remove(slice []asn1.ObjectIdentifier, i int) []asn1.ObjectIdentifier {
-	copy (slice[i:], slice[i+1:])
+	copy(slice[i:], slice[i+1:])
 	return slice[:len(slice)-1]
 }
