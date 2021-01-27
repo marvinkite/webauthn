@@ -11,6 +11,8 @@ type Credential struct {
 	PublicKey []byte
 	// The attestation format used (if any) by the authenticator when creating the credential.
 	AttestationType string
+	// Indicates if the credential was created with userVerification
+	UserVerification bool
 	// The Authenticator information for a given certificate
 	Authenticator Authenticator
 }
