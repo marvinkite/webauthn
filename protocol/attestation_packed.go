@@ -80,6 +80,10 @@ func handleBasicAttestation(signature, clientDataHash, authData, aaguid []byte, 
 	// and clientDataHash using the attestation public key in attestnCert with the algorithm specified in alg.
 	attestationType := "Packed (Basic)"
 
+	if len(x5c) == 0 {
+		return "", nil, ErrAttestationFormat.WithDetails("No x5c Certificate chain found")
+	}
+
 	for _, c := range x5c {
 		cb, cv := c.([]byte)
 		if !cv {
