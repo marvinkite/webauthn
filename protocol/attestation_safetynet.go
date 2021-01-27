@@ -72,6 +72,9 @@ func verifySafetyNetFormat(att AttestationObject, clientDataHash []byte) (string
 
 	token, err := jwt.Parse(string(response), func(token *jwt.Token) (interface{}, error) {
 		chain := token.Header["x5c"].([]interface{})
+		if len(chain) == 0 {
+			return nil, ErrInvalidAttestation.WithDetails("Error finding x5c certificate chain")
+		}
 		o := make([]byte, base64.StdEncoding.DecodedLen(len(chain[0].(string))))
 		n, err := base64.StdEncoding.Decode(o, []byte(chain[0].(string)))
 		cert, err := x509.ParseCertificate(o[:n])
