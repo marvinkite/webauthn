@@ -763,20 +763,20 @@ var metadataStatement = &metadata.MetadataStatement{
 type testCredentialStore struct {
 }
 
-func (store *testCredentialStore) GetCredential(credentialId []byte) (*credential.Credential, []byte) {
+func (store *testCredentialStore) GetCredential(credentialId []byte) (*credential.Credential, []byte, error) {
+	return nil, nil, nil
+}
+
+func (store *testCredentialStore) GetCredentialForUser(userId []byte) ([]credential.Credential, error) {
 	return nil, nil
 }
 
-func (store *testCredentialStore) GetCredentialForUser(userId []byte) []credential.Credential {
-	return nil
-}
-
-func (store *testCredentialStore) ExistsCredential(credentialId []byte) bool {
+func (store *testCredentialStore) ExistsCredential(credentialId []byte) (bool, error) {
 	storedId, _ := base64.RawURLEncoding.DecodeString("6xrtBhJQW6QU4tOaB4rrHaS2Ks0yDDL_q8jDC16DEjZ-VLVf4kCRkvl2xp2D71sTPYns-exsHQHTy3G-zJRK8g")
 	if bytes.Equal(credentialId, storedId) {
-		return true
+		return true, nil
 	} else {
-		return false
+		return false, nil
 	}
 }
 
