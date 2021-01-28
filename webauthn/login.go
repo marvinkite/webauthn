@@ -2,6 +2,7 @@ package webauthn
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/base64"
 	"gitlab.com/hanko/webauthn/credential"
 	"net/http"
@@ -91,6 +92,16 @@ func WithUserVerification(userVerification protocol.UserVerificationRequirement)
 func WithAssertionExtensions(extensions protocol.AuthenticationExtensions) LoginOption {
 	return func(cco *protocol.PublicKeyCredentialRequestOptions) {
 		cco.Extensions = extensions
+	}
+}
+
+// Request with transaction context
+func WithTransaction(transaction string) LoginOption {
+	return func(cco *protocol.PublicKeyCredentialRequestOptions) {
+		if transaction != "" {
+			transactionHash := sha256.Sum256([]byte(transaction))
+			cco.Challenge = append(cco.Challenge, transactionHash[:]...)
+		}
 	}
 }
 
