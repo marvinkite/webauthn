@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"gitlab.com/hanko/webauthn/cbor_options"
+	"gitlab.com/hanko/webauthn/protocol/webauthncose"
 )
 
 // From §5.2.1 (https://www.w3.org/TR/webauthn/#authenticatorattestationresponse)
@@ -148,7 +149,14 @@ func (attestationObject *AttestationObject) Verify(relyingPartyID string, client
 	// client data computed in step 7.
 	attestationType, _, err := formatHandler(*attestationObject, clientDataHash)
 	if err != nil {
-		return err.(*Error).WithInfo(attestationType)
+		switch err.(type) {
+		case *Error:
+			return err.(*Error).WithInfo(attestationType)
+		case *webauthncose.Error:
+			return err
+		default:
+			return ErrAttestation.WithInfo(err.Error())
+		}
 	}
 
 	return nil

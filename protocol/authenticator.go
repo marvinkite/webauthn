@@ -160,7 +160,10 @@ func (a *AuthenticatorData) Unmarshal(rawAuthData []byte) error {
 
 	if a.Flags.HasAttestedCredentialData() {
 		if len(rawAuthData) > minAuthDataLength {
-			a.unmarshalAttestedData(rawAuthData)
+			err := a.unmarshalAttestedData(rawAuthData)
+			if err != nil {
+				return err
+			}
 			attDataLen := len(a.AttData.AAGUID) + 2 + len(a.AttData.CredentialID) + len(a.AttData.CredentialPublicKey)
 			remaining = remaining - attDataLen
 		} else {
@@ -189,11 +192,22 @@ func (a *AuthenticatorData) Unmarshal(rawAuthData []byte) error {
 }
 
 // If Attestation Data is present, unmarshall that into the appropriate public key structure
-func (a *AuthenticatorData) unmarshalAttestedData(rawAuthData []byte) {
+func (a *AuthenticatorData) unmarshalAttestedData(rawAuthData []byte) error {
+	rawAuthDataLen := len(rawAuthData)
+	if rawAuthDataLen < 53 {
+		return ErrBadRequest.WithDetails("Attested credential flag set but data is missing")
+	}
 	a.AttData.AAGUID = rawAuthData[37:53]
+	if rawAuthDataLen < 55 {
+		return ErrBadRequest.WithDetails("Attested credential flag set but data is missing")
+	}
 	idLength := binary.BigEndian.Uint16(rawAuthData[53:55])
+	if rawAuthDataLen < int(55 + idLength) {
+		return ErrBadRequest.WithDetails("Attested credential flag set but data is missing")
+	}
 	a.AttData.CredentialID = rawAuthData[55 : 55+idLength]
 	a.AttData.CredentialPublicKey = unmarshalCredentialPublicKey(rawAuthData[55+idLength:])
+	return nil
 }
 
 // Unmarshall the credential's Public Key into CBOR encoding

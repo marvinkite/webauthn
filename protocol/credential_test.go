@@ -16,6 +16,9 @@ import (
 func TestParseCredentialCreationResponse(t *testing.T) {
 	reqBody := ioutil.NopCloser(bytes.NewReader([]byte(testCredentialRequestBody)))
 	httpReq := &http.Request{Body: reqBody}
+
+	reqBodyNoAttestation := ioutil.NopCloser(bytes.NewReader([]byte(testCredentialNoAttestationDataRequestBody)))
+	httpReqNoAttestation := &http.Request{Body: reqBodyNoAttestation}
 	type args struct {
 		response *http.Request
 	}
@@ -85,6 +88,12 @@ func TestParseCredentialCreationResponse(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "attestationObject.authData.flags. AT is not set and Attestation Data is not present",
+			args: args{response: httpReqNoAttestation},
+			want: nil,
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -94,45 +103,47 @@ func TestParseCredentialCreationResponse(t *testing.T) {
 				t.Errorf("ParseCredentialCreationResponse() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got.Extensions, tt.want.Extensions) {
-				t.Errorf("Extensions = %v \n want: %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got.ID, tt.want.ID) {
-				t.Errorf("ID = %v \n want: %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got.ParsedCredential, tt.want.ParsedCredential) {
-				t.Errorf("ParsedCredential = %v \n want: %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got.ParsedPublicKeyCredential, tt.want.ParsedPublicKeyCredential) {
-				t.Errorf("ParsedPublicKeyCredential = %v \n want: %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got.Raw, tt.want.Raw) {
-				t.Errorf("Raw = %v \n want: %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got.RawID, tt.want.RawID) {
-				t.Errorf("RawID = %v \n want: %v", got, tt.want)
-			}
-			// Unmarshall CredentialPublicKey
-			var pkWant interface{}
-			keyBytesWant := tt.want.Response.AttestationObject.AuthData.AttData.CredentialPublicKey
-			cbor_options.CborDecMode.Unmarshal(keyBytesWant, &pkWant)
-			var pkGot interface{}
-			keyBytesGot := got.Response.AttestationObject.AuthData.AttData.CredentialPublicKey
-			cbor_options.CborDecMode.Unmarshal(keyBytesGot, &pkGot)
-			if !reflect.DeepEqual(pkGot, pkWant) {
-				t.Errorf("Response = %+v \n want: %+v", pkGot, pkWant)
-			}
-			if !reflect.DeepEqual(got.Type, tt.want.Type) {
-				t.Errorf("Type = %v \n want: %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got.Response.CollectedClientData, tt.want.Response.CollectedClientData) {
-				t.Errorf("CollectedClientData = %v \n want: %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got.Response.AttestationObject.Format, tt.want.Response.AttestationObject.Format) {
-				t.Errorf("Format = %v \n want: %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got.Response.AttestationObject.AuthData.AttData.CredentialID, tt.want.Response.AttestationObject.AuthData.AttData.CredentialID) {
-				t.Errorf("CredentialID = %v \n want: %v", got, tt.want)
+			if tt.want != nil {
+				if !reflect.DeepEqual(got.Extensions, tt.want.Extensions) {
+					t.Errorf("Extensions = %v \n want: %v", got, tt.want)
+				}
+				if !reflect.DeepEqual(got.ID, tt.want.ID) {
+					t.Errorf("ID = %v \n want: %v", got, tt.want)
+				}
+				if !reflect.DeepEqual(got.ParsedCredential, tt.want.ParsedCredential) {
+					t.Errorf("ParsedCredential = %v \n want: %v", got, tt.want)
+				}
+				if !reflect.DeepEqual(got.ParsedPublicKeyCredential, tt.want.ParsedPublicKeyCredential) {
+					t.Errorf("ParsedPublicKeyCredential = %v \n want: %v", got, tt.want)
+				}
+				if !reflect.DeepEqual(got.Raw, tt.want.Raw) {
+					t.Errorf("Raw = %v \n want: %v", got, tt.want)
+				}
+				if !reflect.DeepEqual(got.RawID, tt.want.RawID) {
+					t.Errorf("RawID = %v \n want: %v", got, tt.want)
+				}
+				// Unmarshall CredentialPublicKey
+				var pkWant interface{}
+				keyBytesWant := tt.want.Response.AttestationObject.AuthData.AttData.CredentialPublicKey
+				cbor_options.CborDecMode.Unmarshal(keyBytesWant, &pkWant)
+				var pkGot interface{}
+				keyBytesGot := got.Response.AttestationObject.AuthData.AttData.CredentialPublicKey
+				cbor_options.CborDecMode.Unmarshal(keyBytesGot, &pkGot)
+				if !reflect.DeepEqual(pkGot, pkWant) {
+					t.Errorf("Response = %+v \n want: %+v", pkGot, pkWant)
+				}
+				if !reflect.DeepEqual(got.Type, tt.want.Type) {
+					t.Errorf("Type = %v \n want: %v", got, tt.want)
+				}
+				if !reflect.DeepEqual(got.Response.CollectedClientData, tt.want.Response.CollectedClientData) {
+					t.Errorf("CollectedClientData = %v \n want: %v", got, tt.want)
+				}
+				if !reflect.DeepEqual(got.Response.AttestationObject.Format, tt.want.Response.AttestationObject.Format) {
+					t.Errorf("Format = %v \n want: %v", got, tt.want)
+				}
+				if !reflect.DeepEqual(got.Response.AttestationObject.AuthData.AttData.CredentialID, tt.want.Response.AttestationObject.AuthData.AttData.CredentialID) {
+					t.Errorf("CredentialID = %v \n want: %v", got, tt.want)
+				}
 			}
 		})
 	}
@@ -646,6 +657,17 @@ var testCredentialRequestBody = `{
 		"clientDataJSON":"eyJjaGFsbGVuZ2UiOiJXOEd6RlU4cEdqaG9SYldyTERsYW1BZnFfeTRTMUNaRzFWdW9lUkxBUnJFIiwib3JpZ2luIjoiaHR0cHM6Ly93ZWJhdXRobi5pbyIsInR5cGUiOiJ3ZWJhdXRobi5jcmVhdGUifQ"
 		}
 	}`
+
+var testCredentialNoAttestationDataRequestBody = `{
+	"id":"xYMIlXmY_0AJLjsV0ENJrP84FhNLhdMgqaNrpNko84w",
+	"rawId":"xYMIlXmY_0AJLjsV0ENJrP84FhNLhdMgqaNrpNko84w",
+	"response":{
+		"attestationObject":"o2NmbXRmcGFja2VkZ2F0dFN0bXSjY2FsZyZjc2lnWEgwRgIhAKKBewWLF_QEN-3kSMIfjbmytI7CsaR8TXPZO3XAvQOqAiEAyGExoG9vQHAv9sIcs-lKfIy0wkKRG_T_iVHelLPjrm1jeDVjgVkERTCCBEEwggIpoAMCAQICAQEwDQYJKoZIhvcNAQELBQAwgaExGDAWBgNVBAMMD0ZJRE8yIFRFU1QgUk9PVDExMC8GCSqGSIb3DQEJARYiY29uZm9ybWFuY2UtdG9vbHNAZmlkb2FsbGlhbmNlLm9yZzEWMBQGA1UECgwNRklETyBBbGxpYW5jZTEMMAoGA1UECwwDQ1dHMQswCQYDVQQGEwJVUzELMAkGA1UECAwCTVkxEjAQBgNVBAcMCVdha2VmaWVsZDAeFw0xODA1MjMxNDM5NDNaFw0yODA1MjAxNDM5NDNaMIHCMSMwIQYDVQQDDBpGSURPMiBCQVRDSCBLRVkgcHJpbWUyNTZ2MTExMC8GCSqGSIb3DQEJARYiY29uZm9ybWFuY2UtdG9vbHNAZmlkb2FsbGlhbmNlLm9yZzEWMBQGA1UECgwNRklETyBBbGxpYW5jZTEiMCAGA1UECwwZQXV0aGVudGljYXRvciBBdHRlc3RhdGlvbjELMAkGA1UEBhMCVVMxCzAJBgNVBAgMAk1ZMRIwEAYDVQQHDAlXYWtlZmllbGQwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAARPOl5eq2wfvK6X9t9kSZZ2LHvvcgBAKnbG8jD2VW8XqpmbWX_Ev1CKr46e8M0BP1q5vSeRS_CAQ3jLzLEbibVGoywwKjAJBgNVHRMEAjAAMB0GA1UdDgQWBBRWTffA-MZVtqEfbE0Z879B4v0BeTANBgkqhkiG9w0BAQsFAAOCAgEAh92gn_ggiQXRLUHOCaTp1HpcBhsOw8ZwTKJBxwYK8ycQ5_QRXBcMRi8axVexH2HoUDTg_u-DkvH2UYGYjX_RAxgGIh4dPgrKXwVndtMwiI5QnQwXMocKtzyyeuSQv6INwk_QCuJL5LOAyPtNUWMTb_UvCcdYWjtZYFOeYQSK9T_6dtWSp6XAhIT4wf3CBaxyai-YiRn3nfi154vUrqtuDh56eODK7-Iezg9npbucln3XxW_kRhtk2FERSBmBoo7IotPd8NGTATnwUvt16vw6x3mW2a6zZGOOeYCQmeXlfNza7fSff1BdFWR5f4cJ0gFAv297Tf5dGZQvZD3DcyQ9OJeJ3RQQ9inX0Nhxk1-6cm1i2e8h9gTN7otjqYmnGjs3ezhPdax2AdrmckO43YNuchfTPECPTRzP4rQo3QbwGLeEAk_HV-oJmYiBkdhf2F2QLMm7SdeqZ1Jjg1W1vNJT288vj1EGF-_aKXg_bujAaK86_YNPBJaW9Rdw4EnfFUi5bEdkD5ZSpeAHCQzCDn2RzkBjs2rTFe4qRFUWtC-RZ4wFqRx70jXLIw-ArpeetpjtzJSNqQsqPlEvpyMxuV2ZjnruA2_ysP3RDzqNs7R8JVNKiie0RAbG7et43ULZcC7oix8JKYsJ6wDmX8Gyy7vWM-LS9XiZUH37sEvwKJbM-xxoYXV0aERhdGFYJ0mWDeWIDoxodDQXD2R2YFuP5K65ooYyx5lc87qDHZdjQQAAAEUAAA",
+		"clientDataJSON":"eyJvcmlnaW4iOiJodHRwOi8vbG9jYWxob3N0OjgwMDAiLCJjaGFsbGVuZ2UiOiJyaWFpaHlPQnZtRFplZUhfbHRFY2pvS1ZSQzdnNnpUSUVES0pRSlk0Y0pVIiwidHlwZSI6IndlYmF1dGhuLmNyZWF0ZSJ9"
+	},
+	"type":"public-key"
+}
+`
 
 func TestVerifyX509CertificateChainAgainstMetadata(t *testing.T) {
 	x5cBytes := []byte{48, 130, 2, 188, 48, 130, 1, 164, 160, 3, 2, 1, 2, 2, 4, 3, 173, 240, 18, 48, 13, 6, 9, 42, 134, 72, 134, 247, 13, 1, 1, 11, 5, 0, 48, 46, 49, 44, 48, 42, 6, 3, 85, 4, 3, 19, 35, 89, 117, 98, 105, 99, 111, 32, 85, 50, 70, 32, 82, 111, 111, 116, 32, 67, 65, 32, 83, 101, 114, 105, 97, 108, 32, 52, 53, 55, 50, 48, 48, 54, 51, 49, 48, 32, 23, 13, 49, 52, 48, 56, 48, 49, 48, 48, 48, 48, 48, 48, 90, 24, 15, 50, 48, 53, 48, 48, 57, 48, 52, 48, 48, 48, 48, 48, 48, 90, 48, 109, 49, 11, 48, 9, 6, 3, 85, 4, 6, 19, 2, 83, 69, 49, 18, 48, 16, 6, 3, 85, 4, 10, 12, 9, 89, 117, 98, 105, 99, 111, 32, 65, 66, 49, 34, 48, 32, 6, 3, 85, 4, 11, 12, 25, 65, 117, 116, 104, 101, 110, 116, 105, 99, 97, 116, 111, 114, 32, 65, 116, 116, 101, 115, 116, 97, 116, 105, 111, 110, 49, 38, 48, 36, 6, 3, 85, 4, 3, 12, 29, 89, 117, 98, 105, 99, 111, 32, 85, 50, 70, 32, 69, 69, 32, 83, 101, 114, 105, 97, 108, 32, 54, 49, 55, 51, 48, 56, 51, 52, 48, 89, 48, 19, 6, 7, 42, 134, 72, 206, 61, 2, 1, 6, 8, 42, 134, 72, 206, 61, 3, 1, 7, 3, 66, 0, 4, 25, 158, 135, 156, 22, 45, 183, 220, 57, 238, 74, 66, 160, 70, 22, 165, 179, 9, 254, 202, 9, 47, 118, 190, 9, 72, 249, 109, 110, 149, 202, 228, 204, 101, 205, 84, 160, 89, 207, 189, 199, 201, 179, 27, 43, 29, 108, 24, 68, 121, 194, 192, 97, 244, 24, 170, 149, 75, 89, 106, 44, 28, 250, 23, 163, 108, 48, 106, 48, 34, 6, 9, 43, 6, 1, 4, 1, 130, 196, 10, 2, 4, 21, 49, 46, 51, 46, 54, 46, 49, 46, 52, 46, 49, 46, 52, 49, 52, 56, 50, 46, 49, 46, 55, 48, 19, 6, 11, 43, 6, 1, 4, 1, 130, 229, 28, 2, 1, 1, 4, 4, 3, 2, 4, 48, 48, 33, 6, 11, 43, 6, 1, 4, 1, 130, 229, 28, 1, 1, 4, 4, 18, 4, 16, 250, 43, 153, 220, 158, 57, 66, 87, 143, 146, 74, 48, 210, 60, 65, 24, 48, 12, 6, 3, 85, 29, 19, 1, 1, 255, 4, 2, 48, 0, 48, 13, 6, 9, 42, 134, 72, 134, 247, 13, 1, 1, 11, 5, 0, 3, 130, 1, 1, 0, 40, 235, 179, 103, 254, 209, 216, 240, 226, 137, 235, 202, 159, 246, 216, 7, 87, 198, 14, 154, 229, 124, 177, 114, 140, 155, 28, 56, 202, 187, 189, 132, 217, 35, 125, 168, 49, 172, 33, 148, 159, 15, 45, 252, 12, 49, 107, 253, 177, 117, 179, 110, 99, 162, 43, 187, 88, 14, 173, 202, 82, 128, 208, 121, 132, 14, 90, 30, 37, 114, 98, 90, 59, 251, 135, 96, 51, 219, 251, 34, 169, 105, 201, 56, 184, 156, 225, 113, 53, 148, 0, 161, 37, 45, 151, 2, 169, 18, 147, 213, 69, 25, 233, 96, 221, 34, 206, 138, 39, 235, 5, 235, 126, 121, 183, 80, 192, 2, 254, 217, 1, 107, 113, 30, 201, 173, 116, 80, 27, 217, 20, 203, 190, 142, 217, 87, 18, 129, 183, 79, 68, 235, 7, 124, 230, 30, 203, 6, 171, 133, 169, 114, 85, 38, 126, 232, 227, 152, 43, 244, 63, 12, 178, 26, 56, 45, 35, 94, 185, 228, 206, 109, 178, 152, 196, 5, 66, 80, 64, 35, 43, 43, 97, 225, 12, 215, 12, 98, 21, 188, 3, 183, 233, 64, 113, 183, 14, 18, 209, 196, 127, 150, 101, 90, 46, 249, 157, 76, 229, 90, 127, 27, 75, 31, 249, 20, 238, 19, 109, 158, 97, 32, 71, 20, 136, 100, 105, 136, 128, 68, 49, 22, 101, 56, 137, 184, 100, 134, 217, 201, 201, 255, 188, 147, 133, 69, 53, 105, 179, 69, 116, 75, 140, 160, 180, 55}
