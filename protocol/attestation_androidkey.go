@@ -195,7 +195,7 @@ const (
 )
 
 /**
- * The origin of a key (or pair), i.e. where it was generated.  Note that KM_TAG_ORIGIN can be found
+ * KM_KEY_ORIGIN The origin of a key (or pair), i.e. where it was generated.  Note that KM_TAG_ORIGIN can be found
  * in either the hardware-enforced or software-enforced list for a key, indicating whether the key
  * is hardware or software-based.  Specifically, a key with KM_ORIGIN_GENERATED in the
  * hardware-enforced list is guaranteed never to have existed outide the secure hardware.
@@ -203,25 +203,35 @@ const (
 type KM_KEY_ORIGIN int
 
 const (
-	KM_ORIGIN_GENERATED = iota /* Generated in keymaster.  Should not exist outside the TEE. */
-	KM_ORIGIN_DERIVED          /* Derived inside keymaster.  Likely exists off-device. */
-	KM_ORIGIN_IMPORTED         /* Imported into keymaster.  Existed as cleartext in Android. */
-	KM_ORIGIN_UNKNOWN          /* Keymaster did not record origin.  This value can only be seen on
+	/* KM_ORIGIN_GENERATED Generated in keymaster.  Should not exist outside the TEE. */
+	KM_ORIGIN_GENERATED = iota
+	/* KM_ORIGIN_DERIVED Derived inside keymaster.  Likely exists off-device. */
+	KM_ORIGIN_DERIVED
+	/* KM_ORIGIN_IMPORTED Imported into keymaster.  Existed as cleartext in Android. */
+	KM_ORIGIN_IMPORTED
+	/* KM_ORIGIN_UNKNOWN Keymaster did not record origin.  This value can only be seen on
 	 * keys in a keymaster0 implementation.  The keymaster0 adapter uses
-	 * this value to document the fact that it is unkown whether the key
+	 * this value to document the fact that it is unknown whether the key
 	 * was generated inside or imported into keymaster. */
+	KM_ORIGIN_UNKNOWN
 )
 
 /**
- * Possible purposes of a key (or pair).
+ * KM_PURPOSE Possible purposes of a key (or pair).
  */
 type KM_PURPOSE int
 
 const (
-	KM_PURPOSE_ENCRYPT    = iota /* Usable with RSA, EC and AES keys. */
-	KM_PURPOSE_DECRYPT           /* Usable with RSA, EC and AES keys. */
-	KM_PURPOSE_SIGN              /* Usable with RSA, EC and HMAC keys. */
-	KM_PURPOSE_VERIFY            /* Usable with RSA, EC and HMAC keys. */
-	KM_PURPOSE_DERIVE_KEY        /* Usable with EC keys. */
-	KM_PURPOSE_WRAP              /* Usable with wrapped keys. */
+	/* KM_PURPOSE_ENCRYPT Usable with RSA, EC and AES keys. */
+	KM_PURPOSE_ENCRYPT = iota
+	/* KM_PURPOSE_DECRYPT Usable with RSA, EC and AES keys. */
+	KM_PURPOSE_DECRYPT
+	/* KM_PURPOSE_SIGN Usable with RSA, EC and HMAC keys. */
+	KM_PURPOSE_SIGN
+	/* KM_PURPOSE_VERIFY Usable with RSA, EC and HMAC keys. */
+	KM_PURPOSE_VERIFY
+	/* KM_PURPOSE_DERIVE_KEY Usable with EC keys. */
+	KM_PURPOSE_DERIVE_KEY
+	/* KM_PURPOSE_WRAP Usable with wrapped keys. */
+	KM_PURPOSE_WRAP
 )

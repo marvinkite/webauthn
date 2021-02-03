@@ -40,8 +40,11 @@ type AuthenticatorData struct {
 	ExtData  []byte                 `json:"ext_data"`
 }
 
+// AttestedCredentialData represents the credential that gets created during a navigator.credentials.create() call in the browser.
 type AttestedCredentialData struct {
+	// AAGUID is a globally unique identifier for the model of the authenticator
 	AAGUID       []byte `json:"aaguid"`
+	// CredentialID is a unique identifier for this credential
 	CredentialID []byte `json:"credential_id"`
 	// The raw credential public key bytes received from the attestation data
 	CredentialPublicKey []byte `json:"public_key"`
