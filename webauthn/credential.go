@@ -1,8 +1,8 @@
 package webauthn
 
 import (
-	"gitlab.com/hanko/webauthn/credential"
-	"gitlab.com/hanko/webauthn/protocol"
+	"github.com/teamhanko/webauthn/credential"
+	"github.com/teamhanko/webauthn/protocol"
 )
 
 // MakeNewCredential will return a credential pointer on successful validation of a registration response

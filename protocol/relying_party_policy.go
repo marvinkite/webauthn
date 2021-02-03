@@ -2,7 +2,7 @@ package protocol
 
 import (
 	uuid "github.com/satori/go.uuid"
-	"gitlab.com/hanko/webauthn/metadata"
+	"github.com/teamhanko/webauthn/metadata"
 )
 
 type RelyingPartyPolicy interface {

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"gitlab.com/hanko/webauthn/cbor_options"
+	"github.com/teamhanko/webauthn/cbor_options"
 	"github.com/fxamacker/cbor/v2"
 )
 
