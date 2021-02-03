@@ -24,7 +24,7 @@ func CreateChallenge() (Challenge, error) {
 	return challenge, nil
 }
 
-// String returns a base64 raw url encoded representaiton of the challenge
+// String returns a base64 raw url encoded representation of the challenge
 func (c Challenge) String() string {
 	return base64.RawURLEncoding.EncodeToString(c)
 }

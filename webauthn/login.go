@@ -17,7 +17,7 @@ import (
 // LoginOption is used to provide parameters that modify the default Credential Assertion Payload that is sent to the user.
 type LoginOption func(*protocol.PublicKeyCredentialRequestOptions)
 
-// Creates the CredentialAssertion data payload that should be sent to the user agent for beginning the
+// BeginLogin creates the CredentialAssertion data payload that should be sent to the user agent for beginning the
 // login/assertion process. The format of this data can be seen in §5.5 of the WebAuthn specification
 // (https://www.w3.org/TR/webauthn/#assertion-options). These default values can be amended by providing
 // additional LoginOption parameters. This function also returns sessionData, that must be stored by the
@@ -73,7 +73,7 @@ func (webauthn *WebAuthn) BeginLogin(user User, opts ...LoginOption) (*protocol.
 	return &response, &newSessionData, nil
 }
 
-// Updates the allowed credential list with Credential Descripiptors, discussed in §5.10.3
+// WithAllowedCredentials updates the allowed credential list with Credential Descripiptors, discussed in §5.10.3
 // (https://www.w3.org/TR/webauthn/#dictdef-publickeycredentialdescriptor) with user-supplied values
 func WithAllowedCredentials(allowList []protocol.CredentialDescriptor) LoginOption {
 	return func(cco *protocol.PublicKeyCredentialRequestOptions) {
@@ -81,21 +81,21 @@ func WithAllowedCredentials(allowList []protocol.CredentialDescriptor) LoginOpti
 	}
 }
 
-// Request a user verification preference
+// WithUserVerification requests a user verification preference
 func WithUserVerification(userVerification protocol.UserVerificationRequirement) LoginOption {
 	return func(cco *protocol.PublicKeyCredentialRequestOptions) {
 		cco.UserVerification = userVerification
 	}
 }
 
-// Request additional extensions for assertion
+// WithAssertionExtensions requests additional extensions for assertion
 func WithAssertionExtensions(extensions protocol.AuthenticationExtensions) LoginOption {
 	return func(cco *protocol.PublicKeyCredentialRequestOptions) {
 		cco.Extensions = extensions
 	}
 }
 
-// Request with transaction context
+// WithTransaction request with transaction context
 func WithTransaction(transaction string) LoginOption {
 	return func(cco *protocol.PublicKeyCredentialRequestOptions) {
 		if transaction != "" {
@@ -105,7 +105,7 @@ func WithTransaction(transaction string) LoginOption {
 	}
 }
 
-// Take the response from the client and validate it against the user credentials and stored session data
+// FinishLogin takes the response from the client and validates it against the user credentials and stored session data
 func (webauthn *WebAuthn) FinishLogin(session SessionData, response *http.Request) (credential *credential.Credential, userId []byte, error error) {
 	parsedResponse, err := protocol.ParseCredentialRequestResponse(response)
 	if err != nil {

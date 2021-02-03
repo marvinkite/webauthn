@@ -79,6 +79,9 @@ func verifyTPMFormat(att AttestationObject, clientDataHash []byte) (string, []in
 	}
 
 	key, err := webauthncose.ParsePublicKey(att.AuthData.AttData.CredentialPublicKey)
+	if err != nil {
+		return tpmAttestationKey, nil, ErrAttestationFormat.WithDetails(fmt.Sprintf("Cannot parse Public Key. %+v\n", err))
+	}
 	switch key.(type) {
 	case webauthncose.EC2PublicKeyData:
 		e := key.(webauthncose.EC2PublicKeyData)
@@ -104,6 +107,9 @@ func verifyTPMFormat(att AttestationObject, clientDataHash []byte) (string, []in
 
 	// Validate that certInfo is valid:
 	certInfo, err := googletpm.DecodeAttestationData(certInfoBytes)
+	if err != nil {
+		return tpmAttestationKey, nil, ErrAttestationFormat.WithDetails(fmt.Sprintf("Cannot Decode Attestation Data: %+v\n", err))
+	}
 	// 1/4 Verify that magic is set to TPM_GENERATED_VALUE.
 	if certInfo.Magic != 0xff544347 {
 		return tpmAttestationKey, nil, ErrAttestationFormat.WithDetails("Magic is not set to TPM_GENERATED_VALUE")
@@ -170,6 +176,9 @@ func verifyTPMFormat(att AttestationObject, clientDataHash []byte) (string, []in
 		for _, ext := range aikCert.Extensions {
 			if ext.Id.Equal([]int{2, 5, 29, 17}) {
 				manufacturer, model, version, err = parseSANExtension(ext.Value)
+				if err != nil {
+					return tpmAttestationKey, nil, ErrAttestationFormat.WithDetails(fmt.Sprintf("Error parsing SAN Extension: %v",err))
+				}
 			}
 		}
 

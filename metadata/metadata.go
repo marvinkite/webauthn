@@ -436,6 +436,9 @@ func unmarshalMDSTOC(body []byte, c http.Client) (MetadataTOCPayload, string, er
 		o := make([]byte, base64.StdEncoding.DecodedLen(len(chain[0].(string))))
 		// base64 decode the certificate into the buffer
 		n, err := base64.StdEncoding.Decode(o, []byte(chain[0].(string)))
+		if err != nil {
+			return nil, err
+		}
 		// parse the certificate from the buffer
 		cert, err := x509.ParseCertificate(o[:n])
 		if err != nil {
