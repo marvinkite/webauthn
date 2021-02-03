@@ -11,14 +11,14 @@ import (
 	"github.com/teamhanko/webauthn/protocol/webauthncose"
 )
 
-// The raw response returned to us from an authenticator when we request a
+// CredentialAssertionResponse represents the raw response returned to us from an authenticator when we request a
 // credential for login/assertion.
 type CredentialAssertionResponse struct {
 	PublicKeyCredential
 	AssertionResponse AuthenticatorAssertionResponse `json:"response"`
 }
 
-// The parsed CredentialAssertionResponse that has been marshalled into a format
+// The ParsedCredentialAssertionData that has been marshalled into a format
 // that allows us to verify the client and authenticator data inside the response
 type ParsedCredentialAssertionData struct {
 	ParsedPublicKeyCredential
@@ -35,7 +35,7 @@ type AuthenticatorAssertionResponse struct {
 	UserHandle        URLEncodedBase64 `json:"userHandle,omitempty"`
 }
 
-// Parsed form of AuthenticatorAssertionResponse
+// ParsedAssertionResponse is the parsed form of AuthenticatorAssertionResponse
 type ParsedAssertionResponse struct {
 	CollectedClientData CollectedClientData
 	AuthenticatorData   AuthenticatorData
@@ -43,7 +43,7 @@ type ParsedAssertionResponse struct {
 	UserHandle          []byte
 }
 
-// Parse the credential request response into a format that is either required by the specification
+// ParseCredentialRequestResponse parses the credential request response into a format that is either required by the specification
 // or makes the assertion verification steps easier to complete. This takes an http.Request that contains
 // the attestation response data in a raw, mostly base64 encoded format, and parses the data into
 // manageable structures
@@ -54,7 +54,7 @@ func ParseCredentialRequestResponse(response *http.Request) (*ParsedCredentialAs
 	return ParseCredentialRequestResponseBody(response.Body)
 }
 
-// Parse the credential request response into a format that is either required by the specification
+// ParseCredentialRequestResponseBody parses the credential request response into a format that is either required by the specification
 // or makes the assertion verification steps easier to complete. This takes an io.Reader that contains
 // the attestation response data in a raw, mostly base64 encoded format, and parses the data into
 // manageable structures
@@ -97,8 +97,8 @@ func ParseCredentialRequestResponseBody(body io.Reader) (*ParsedCredentialAssert
 	return &par, nil
 }
 
-// Follow the remaining steps outlined in §7.2 Verifying an authentication assertion
-// (https://www.w3.org/TR/webauthn/#verifying-assertion) and return an error if there
+// Verify follows the remaining steps outlined in §7.2 Verifying an authentication assertion
+// (https://www.w3.org/TR/webauthn/#verifying-assertion) and returns an error if there
 // is a failure during each step.
 func (p *ParsedCredentialAssertionData) Verify(storedChallenge string, relyingPartyID, relyingPartyOrigin string, verifyUser bool, credentialBytes []byte) error {
 

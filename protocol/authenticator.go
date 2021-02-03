@@ -10,7 +10,7 @@ import (
 
 var minAuthDataLength = 37
 
-// Authenticators respond to Relying Party requests by returning an object derived from the
+// The AuthenticatorResponse. Authenticators respond to Relying Party requests by returning an object derived from the
 // AuthenticatorResponse interface. See §5.2. Authenticator Responses
 // https://www.w3.org/TR/webauthn/#iface-authenticatorresponse
 type AuthenticatorResponse struct {
@@ -65,6 +65,7 @@ const (
 	CrossPlatform AuthenticatorAttachment = "cross-platform"
 )
 
+// AuthenticatorTransport defines the transport of Authenticators.
 // Authenticators may implement various transports for communicating with clients. This enumeration defines
 // hints as to how clients might communicate with a particular authenticator in order to obtain an assertion
 // for a specific credential. Note that these hints represent the WebAuthn Relying Party's best belief as to
@@ -85,6 +86,7 @@ const (
 	Internal AuthenticatorTransport = "internal"
 )
 
+// UserVerificationRequirement represents the UserVerfication string.
 // A WebAuthn Relying Party may require user verification for some of its operations but not for others,
 // and may use this type to express its needs.
 // See §5.10.6. User Verification Requirement Enumeration https://www.w3.org/TR/webauthn/#userVerificationRequirement
