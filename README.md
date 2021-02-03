@@ -1,6 +1,7 @@
 WebAuthn Library
 =============
 [![GoDoc](https://godoc.org/github.com/teamhanko/webauthn?status.svg)](https://godoc.org/github.com/teamhanko/webauthn)
+![Build Status](https://github.com/teamhanko/webauthn/workflows/Go/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/teamhanko/webauthn)](https://goreportcard.com/report/github.com/teamhanko/webauthn)
 
  
