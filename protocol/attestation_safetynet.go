@@ -77,6 +77,9 @@ func verifySafetyNetFormat(att AttestationObject, clientDataHash []byte) (string
 		}
 		o := make([]byte, base64.StdEncoding.DecodedLen(len(chain[0].(string))))
 		n, err := base64.StdEncoding.Decode(o, []byte(chain[0].(string)))
+		if err != nil {
+			return nil, ErrInvalidAttestation.WithDetails("Cannot decode certificate")
+		}
 		cert, err := x509.ParseCertificate(o[:n])
 		return cert.PublicKey, err
 	})

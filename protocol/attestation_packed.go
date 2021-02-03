@@ -187,6 +187,9 @@ func handleBasicAttestation(signature, clientDataHash, authData, aaguid []byte, 
 		}
 	}
 	uuid, err := uuid.FromBytes(aaguid)
+	if err != nil {
+		return attestationType, x5c, ErrInvalidAttestation.WithDetails("Cannot parse aaguid.")
+	}
 
 	// TODO: brauchen wir diesen Abschnitt dann noch, wenn wir die Daten vom MetadataService bekommmen ???
 	if meta, ok := metadata.Metadata[uuid]; ok {
