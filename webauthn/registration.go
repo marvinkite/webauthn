@@ -10,7 +10,7 @@ import (
 )
 
 // BEGIN REGISTRATION
-// These objects help us creat the CredentialCreationOptions
+// These objects help us create the CredentialCreationOptions
 // that will be passed to the authenticator via the user client
 
 type RegistrationOption func(*protocol.PublicKeyCredentialCreationOptions)
@@ -126,43 +126,43 @@ func (webauthn *WebAuthn) CreateCredential(session SessionData, parsedResponse *
 
 func defaultRegistrationCredentialParameters() []protocol.CredentialParameter {
 	return []protocol.CredentialParameter{
-		protocol.CredentialParameter{
+		{
 			Type:      protocol.PublicKeyCredentialType,
 			Algorithm: webauthncose.AlgES256,
 		},
-		protocol.CredentialParameter{
+		{
 			Type:      protocol.PublicKeyCredentialType,
 			Algorithm: webauthncose.AlgES384,
 		},
-		protocol.CredentialParameter{
+		{
 			Type:      protocol.PublicKeyCredentialType,
 			Algorithm: webauthncose.AlgES512,
 		},
-		protocol.CredentialParameter{
+		{
 			Type:      protocol.PublicKeyCredentialType,
 			Algorithm: webauthncose.AlgRS256,
 		},
-		protocol.CredentialParameter{
+		{
 			Type:      protocol.PublicKeyCredentialType,
 			Algorithm: webauthncose.AlgRS384,
 		},
-		protocol.CredentialParameter{
+		{
 			Type:      protocol.PublicKeyCredentialType,
 			Algorithm: webauthncose.AlgRS512,
 		},
-		protocol.CredentialParameter{
+		{
 			Type:      protocol.PublicKeyCredentialType,
 			Algorithm: webauthncose.AlgPS256,
 		},
-		protocol.CredentialParameter{
+		{
 			Type:      protocol.PublicKeyCredentialType,
 			Algorithm: webauthncose.AlgPS384,
 		},
-		protocol.CredentialParameter{
+		{
 			Type:      protocol.PublicKeyCredentialType,
 			Algorithm: webauthncose.AlgPS512,
 		},
-		protocol.CredentialParameter{
+		{
 			Type:      protocol.PublicKeyCredentialType,
 			Algorithm: webauthncose.AlgEdDSA,
 		},

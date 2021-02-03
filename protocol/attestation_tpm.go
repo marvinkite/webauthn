@@ -177,7 +177,7 @@ func verifyTPMFormat(att AttestationObject, clientDataHash []byte) (string, []in
 			if ext.Id.Equal([]int{2, 5, 29, 17}) {
 				manufacturer, model, version, err = parseSANExtension(ext.Value)
 				if err != nil {
-					return tpmAttestationKey, nil, ErrAttestationFormat.WithDetails(fmt.Sprintf("Error parsing SAN Extension: %v",err))
+					return tpmAttestationKey, nil, ErrAttestationFormat.WithDetails(fmt.Sprintf("Error parsing SAN Extension: %v", err))
 				}
 			}
 		}
