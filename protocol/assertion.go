@@ -133,6 +133,9 @@ func (p *ParsedCredentialAssertionData) Verify(storedChallenge string, relyingPa
 	sigData := append(p.Raw.AssertionResponse.AuthenticatorData, clientDataHash[:]...)
 
 	key, err := webauthncose.ParsePublicKey(credentialBytes)
+	if err != nil {
+		return ErrAssertionSignature.WithDetails(fmt.Sprintf("Error validating the assertion signature: %+v\n", err))
+	}
 
 	valid, err := webauthncose.VerifySignature(key, sigData, p.Response.Signature)
 	if !valid {
