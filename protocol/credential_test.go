@@ -89,9 +89,9 @@ func TestParseCredentialCreationResponse(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "attestationObject.authData.flags. AT is not set and Attestation Data is not present",
-			args: args{response: httpReqNoAttestation},
-			want: nil,
+			name:    "attestationObject.authData.flags. AT is not set and Attestation Data is not present",
+			args:    args{response: httpReqNoAttestation},
+			want:    nil,
 			wantErr: true,
 		},
 	}

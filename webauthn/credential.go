@@ -9,9 +9,9 @@ import (
 func MakeNewCredential(c *protocol.ParsedCredentialCreationData) (*credential.Credential, error) {
 
 	newCredential := &credential.Credential{
-		ID:              c.Response.AttestationObject.AuthData.AttData.CredentialID,
-		PublicKey:       c.Response.AttestationObject.AuthData.AttData.CredentialPublicKey,
-		AttestationType: c.Response.AttestationObject.Format,
+		ID:               c.Response.AttestationObject.AuthData.AttData.CredentialID,
+		PublicKey:        c.Response.AttestationObject.AuthData.AttData.CredentialPublicKey,
+		AttestationType:  c.Response.AttestationObject.Format,
 		UserVerification: c.Response.AttestationObject.AuthData.Flags.UserVerified(),
 		Authenticator: credential.Authenticator{
 			AAGUID:    c.Response.AttestationObject.AuthData.AttData.AAGUID,

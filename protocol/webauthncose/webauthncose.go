@@ -371,7 +371,7 @@ var (
 		Details: "Unsupported public key algorithm",
 	}
 	ErrSigNotProvidedOrInvalid = &Error{
-		Type: "signature_not_provided_or_invalid",
+		Type:    "signature_not_provided_or_invalid",
 		Details: "Signature invalid or not provided",
 	}
 )

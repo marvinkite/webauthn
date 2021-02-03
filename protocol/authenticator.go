@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"github.com/teamhanko/webauthn/cbor_options"
 	"github.com/fxamacker/cbor/v2"
+	"github.com/teamhanko/webauthn/cbor_options"
 )
 
 var minAuthDataLength = 37
@@ -202,7 +202,7 @@ func (a *AuthenticatorData) unmarshalAttestedData(rawAuthData []byte) error {
 		return ErrBadRequest.WithDetails("Attested credential flag set but data is missing")
 	}
 	idLength := binary.BigEndian.Uint16(rawAuthData[53:55])
-	if rawAuthDataLen < int(55 + idLength) {
+	if rawAuthDataLen < int(55+idLength) {
 		return ErrBadRequest.WithDetails("Attested credential flag set but data is missing")
 	}
 	a.AttData.CredentialID = rawAuthData[55 : 55+idLength]
