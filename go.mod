@@ -1,4 +1,4 @@
-module gitlab.com/hanko/webauthn
+module github.com/teamhanko/webauthn
 
 require (
 	github.com/biter777/countries v1.3.4

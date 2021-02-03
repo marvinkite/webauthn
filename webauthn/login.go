@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
-	"gitlab.com/hanko/webauthn/credential"
+	"github.com/teamhanko/webauthn/credential"
 	"net/http"
 
-	"gitlab.com/hanko/webauthn/protocol"
+	"github.com/teamhanko/webauthn/protocol"
 )
 
 // BEGIN REGISTRATION

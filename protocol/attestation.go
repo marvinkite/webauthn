@@ -4,8 +4,8 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"gitlab.com/hanko/webauthn/cbor_options"
-	"gitlab.com/hanko/webauthn/protocol/webauthncose"
+	"github.com/teamhanko/webauthn/cbor_options"
+	"github.com/teamhanko/webauthn/protocol/webauthncose"
 )
 
 // From §5.2.1 (https://www.w3.org/TR/webauthn/#authenticatorattestationresponse)

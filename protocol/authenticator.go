@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"gitlab.com/hanko/webauthn/cbor_options"
 	"github.com/fxamacker/cbor/v2"
+	"github.com/teamhanko/webauthn/cbor_options"
 )
 
 var minAuthDataLength = 37
@@ -40,8 +40,11 @@ type AuthenticatorData struct {
 	ExtData  []byte                 `json:"ext_data"`
 }
 
+// AttestedCredentialData represents the credential that gets created during a navigator.credentials.create() call in the browser.
 type AttestedCredentialData struct {
+	// AAGUID is a globally unique identifier for the model of the authenticator
 	AAGUID       []byte `json:"aaguid"`
+	// CredentialID is a unique identifier for this credential
 	CredentialID []byte `json:"credential_id"`
 	// The raw credential public key bytes received from the attestation data
 	CredentialPublicKey []byte `json:"public_key"`
@@ -202,7 +205,7 @@ func (a *AuthenticatorData) unmarshalAttestedData(rawAuthData []byte) error {
 		return ErrBadRequest.WithDetails("Attested credential flag set but data is missing")
 	}
 	idLength := binary.BigEndian.Uint16(rawAuthData[53:55])
-	if rawAuthDataLen < int(55 + idLength) {
+	if rawAuthDataLen < int(55+idLength) {
 		return ErrBadRequest.WithDetails("Attested credential flag set but data is missing")
 	}
 	a.AttData.CredentialID = rawAuthData[55 : 55+idLength]

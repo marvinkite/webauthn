@@ -6,8 +6,8 @@ import (
 
 func TestAuthenticator_UpdateCounter(t *testing.T) {
 	type fields struct {
-		AAGUID       []byte
-		SignCount    uint32
+		AAGUID    []byte
+		SignCount uint32
 	}
 	type args struct {
 		authDataCount uint32
@@ -21,8 +21,8 @@ func TestAuthenticator_UpdateCounter(t *testing.T) {
 		{
 			"Increased counter",
 			fields{
-				AAGUID:       make([]byte, 16),
-				SignCount:    1,
+				AAGUID:    make([]byte, 16),
+				SignCount: 1,
 			},
 			args{
 				authDataCount: 2,
@@ -32,8 +32,8 @@ func TestAuthenticator_UpdateCounter(t *testing.T) {
 		{
 			"Unchanged counter",
 			fields{
-				AAGUID:       make([]byte, 16),
-				SignCount:    1,
+				AAGUID:    make([]byte, 16),
+				SignCount: 1,
 			},
 			args{
 				authDataCount: 1,
@@ -43,8 +43,8 @@ func TestAuthenticator_UpdateCounter(t *testing.T) {
 		{
 			"Decreased counter",
 			fields{
-				AAGUID:       make([]byte, 16),
-				SignCount:    2,
+				AAGUID:    make([]byte, 16),
+				SignCount: 2,
 			},
 			args{
 				authDataCount: 1,
@@ -54,8 +54,8 @@ func TestAuthenticator_UpdateCounter(t *testing.T) {
 		{
 			"Zero counter",
 			fields{
-				AAGUID:       make([]byte, 16),
-				SignCount:    0,
+				AAGUID:    make([]byte, 16),
+				SignCount: 0,
 			},
 			args{
 				authDataCount: 0,
@@ -65,8 +65,8 @@ func TestAuthenticator_UpdateCounter(t *testing.T) {
 		{
 			"Counter returned to zero",
 			fields{
-				AAGUID:       make([]byte, 16),
-				SignCount:    1,
+				AAGUID:    make([]byte, 16),
+				SignCount: 1,
 			},
 			args{
 				authDataCount: 0,
@@ -77,8 +77,8 @@ func TestAuthenticator_UpdateCounter(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			a := &Authenticator{
-				AAGUID:       tt.fields.AAGUID,
-				SignCount:    tt.fields.SignCount,
+				AAGUID:    tt.fields.AAGUID,
+				SignCount: tt.fields.SignCount,
 			}
 			err := a.CheckCounter(tt.args.authDataCount)
 			a.UpdateCounter(tt.args.authDataCount)

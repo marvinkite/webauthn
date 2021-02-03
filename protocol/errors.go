@@ -69,7 +69,7 @@ var (
 	ErrMetadataNotFound = &Error{
 		Type:    "metadata_not_found",
 		Details: "Metadata for Authenticator not found",
-    }
+	}
 	ErrCredentialAlreadyExists = &Error{
 		Type:    "credential_already_exists",
 		Details: "The credential already exists",

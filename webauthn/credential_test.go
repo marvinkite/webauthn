@@ -1,11 +1,11 @@
 package webauthn
 
 import (
-	"gitlab.com/hanko/webauthn/credential"
+	"github.com/teamhanko/webauthn/credential"
 	"reflect"
 	"testing"
 
-	"gitlab.com/hanko/webauthn/protocol"
+	"github.com/teamhanko/webauthn/protocol"
 )
 
 func TestMakeNewCredential(t *testing.T) {

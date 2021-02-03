@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"encoding/base64"
 	uuid "github.com/satori/go.uuid"
-	"gitlab.com/hanko/webauthn/cbor_options"
-	"gitlab.com/hanko/webauthn/credential"
-	"gitlab.com/hanko/webauthn/metadata"
+	"github.com/teamhanko/webauthn/cbor_options"
+	"github.com/teamhanko/webauthn/credential"
+	"github.com/teamhanko/webauthn/metadata"
 	"io/ioutil"
 	"net/http"
 	"reflect"
@@ -89,9 +89,9 @@ func TestParseCredentialCreationResponse(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "attestationObject.authData.flags. AT is not set and Attestation Data is not present",
-			args: args{response: httpReqNoAttestation},
-			want: nil,
+			name:    "attestationObject.authData.flags. AT is not set and Attestation Data is not present",
+			args:    args{response: httpReqNoAttestation},
+			want:    nil,
 			wantErr: true,
 		},
 	}

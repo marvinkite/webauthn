@@ -10,9 +10,9 @@ import (
 	"time"
 
 	uuid "github.com/satori/go.uuid"
-	"gitlab.com/hanko/webauthn/metadata"
+	"github.com/teamhanko/webauthn/metadata"
 
-	"gitlab.com/hanko/webauthn/protocol/webauthncose"
+	"github.com/teamhanko/webauthn/protocol/webauthncose"
 )
 
 var packedAttestationKey = "packed"
