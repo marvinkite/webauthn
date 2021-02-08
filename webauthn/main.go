@@ -20,6 +20,11 @@ type WebAuthn struct {
 	RpPolicy          protocol.RelyingPartyPolicy
 }
 
+type Timeouts struct {
+	Registration int
+	Authentication int
+}
+
 // The config values required for proper
 type Config struct {
 	RPDisplayName string
@@ -30,7 +35,7 @@ type Config struct {
 	AttestationPreference  protocol.ConveyancePreference
 	AuthenticatorSelection protocol.AuthenticatorSelection
 
-	Timeout int
+	Timeouts
 	Debug   bool
 }
 
@@ -49,8 +54,12 @@ func (config *Config) validate() error {
 		return fmt.Errorf("RPID not valid URI: %+v", err)
 	}
 
-	if config.Timeout == 0 {
-		config.Timeout = defaultTimeout
+	if config.Timeouts.Authentication == 0 {
+		config.Timeouts.Authentication = defaultTimeout
+	}
+
+	if config.Timeouts.Registration == 0 {
+		config.Timeouts.Registration = defaultTimeout
 	}
 
 	if config.RPOrigin == "" {

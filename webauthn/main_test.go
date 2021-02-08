@@ -110,7 +110,10 @@ func TestConfigValidation(t *testing.T) {
 				RPIcon:                 "https://test.com/icon.png",
 				AttestationPreference:  "direct",
 				AuthenticatorSelection: protocol.AuthenticatorSelection{},
-				Timeout:                1000,
+				Timeouts: Timeouts{
+					Registration:   1000,
+					Authentication: 1000,
+				},
 				Debug:                  false,
 			},
 			wantConfig: &Config{
@@ -120,7 +123,10 @@ func TestConfigValidation(t *testing.T) {
 				RPIcon:                 "https://test.com/icon.png",
 				AttestationPreference:  "direct",
 				AuthenticatorSelection: protocol.AuthenticatorSelection{},
-				Timeout:                1000,
+				Timeouts: Timeouts{
+					Registration:   1000,
+					Authentication: 1000,
+				},
 				Debug:                  false,
 			},
 			wantErr: false,
@@ -134,7 +140,10 @@ func TestConfigValidation(t *testing.T) {
 				RPIcon:                 "https://test.com/icon.png",
 				AttestationPreference:  "direct",
 				AuthenticatorSelection: protocol.AuthenticatorSelection{},
-				Timeout:                1000,
+				Timeouts: Timeouts{
+					Registration:   1000,
+					Authentication: 1000,
+				},
 				Debug:                  false,
 			},
 			wantConfig: &Config{
@@ -144,7 +153,10 @@ func TestConfigValidation(t *testing.T) {
 				RPIcon:                 "https://test.com/icon.png",
 				AttestationPreference:  "direct",
 				AuthenticatorSelection: protocol.AuthenticatorSelection{},
-				Timeout:                1000,
+				Timeouts: Timeouts{
+					Registration:   1000,
+					Authentication: 1000,
+				},
 				Debug:                  false,
 			},
 			wantErr: false,
@@ -158,7 +170,10 @@ func TestConfigValidation(t *testing.T) {
 				RPIcon:                 "https://test.com/icon.png",
 				AttestationPreference:  "direct",
 				AuthenticatorSelection: protocol.AuthenticatorSelection{},
-				Timeout:                0,
+				Timeouts: Timeouts{
+					Registration:   0,
+					Authentication: 0,
+				},
 				Debug:                  false,
 			},
 			wantConfig: &Config{
@@ -168,7 +183,10 @@ func TestConfigValidation(t *testing.T) {
 				RPIcon:                 "https://test.com/icon.png",
 				AttestationPreference:  "direct",
 				AuthenticatorSelection: protocol.AuthenticatorSelection{},
-				Timeout:                60000,
+				Timeouts: Timeouts{
+					Registration:   60000,
+					Authentication: 60000,
+				},
 				Debug:                  false,
 			},
 			wantErr: false,
@@ -182,7 +200,10 @@ func TestConfigValidation(t *testing.T) {
 				RPIcon:                 "https://test.com/icon.png",
 				AttestationPreference:  "direct",
 				AuthenticatorSelection: protocol.AuthenticatorSelection{},
-				Timeout:                1000,
+				Timeouts: Timeouts{
+					Registration:   1000,
+					Authentication: 1000,
+				},
 				Debug:                  false,
 			},
 			wantConfig: &Config{
@@ -192,7 +213,10 @@ func TestConfigValidation(t *testing.T) {
 				RPIcon:                 "https://test.com/icon.png",
 				AttestationPreference:  "direct",
 				AuthenticatorSelection: protocol.AuthenticatorSelection{},
-				Timeout:                1000,
+				Timeouts: Timeouts{
+					Registration:   1000,
+					Authentication: 1000,
+				},
 				Debug:                  false,
 			},
 			wantErr: false,
@@ -206,7 +230,10 @@ func TestConfigValidation(t *testing.T) {
 				RPIcon:                 "",
 				AttestationPreference:  "",
 				AuthenticatorSelection: protocol.AuthenticatorSelection{},
-				Timeout:                0,
+				Timeouts: Timeouts{
+					Registration:   0,
+					Authentication: 0,
+				},
 				Debug:                  false,
 			},
 			wantConfig: nil,
@@ -221,7 +248,10 @@ func TestConfigValidation(t *testing.T) {
 				RPIcon:                 "",
 				AttestationPreference:  "",
 				AuthenticatorSelection: protocol.AuthenticatorSelection{},
-				Timeout:                0,
+				Timeouts: Timeouts{
+					Registration:   1000,
+					Authentication: 1000,
+				},
 				Debug:                  false,
 			},
 			wantConfig: nil,

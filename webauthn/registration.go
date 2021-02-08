@@ -53,7 +53,7 @@ func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOptio
 		User:                   webAuthnUser,
 		Parameters:             credentialParams,
 		AuthenticatorSelection: authSelection,
-		Timeout:                webauthn.Config.Timeout,
+		Timeout:                webauthn.Config.Timeouts.Registration,
 		Attestation:            webauthn.Config.AttestationPreference,
 	}
 
