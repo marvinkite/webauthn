@@ -52,7 +52,7 @@ func (webauthn *WebAuthn) BeginLogin(user User, opts ...LoginOption) (*protocol.
 
 	requestOptions := protocol.PublicKeyCredentialRequestOptions{
 		Challenge:          challenge,
-		Timeout:            webauthn.Config.Timeout,
+		Timeout:            webauthn.Config.Timeouts.Authentication,
 		RelyingPartyID:     webauthn.Config.RPID,
 		UserVerification:   webauthn.Config.AuthenticatorSelection.UserVerification,
 		AllowedCredentials: allowedCredentials,
