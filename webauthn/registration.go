@@ -67,7 +67,7 @@ func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOptio
 		UserID:                  user.WebAuthnID(),
 		UserVerification:        creationOptions.AuthenticatorSelection.UserVerification,
 		ConveyancePreference:    creationOptions.Attestation,
-		AuthenticatorAttachment: authSelection.AuthenticatorAttachment,
+		AuthenticatorAttachment: creationOptions.AuthenticatorSelection.AuthenticatorAttachment,
 	}
 
 	return &response, &newSessionData, nil
