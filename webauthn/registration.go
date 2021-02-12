@@ -101,6 +101,13 @@ func WithExtensions(extension protocol.AuthenticationExtensions) RegistrationOpt
 	}
 }
 
+// WithTimeout
+func WithRegistrationTimeout(timeout int) RegistrationOption {
+	return func(cco *protocol.PublicKeyCredentialCreationOptions) {
+		cco.Timeout = timeout
+	}
+}
+
 // Take the response from the authenticator and client and verify the credential against the user's credentials and
 // session data.
 func (webauthn *WebAuthn) FinishRegistration(session SessionData, response *http.Request) (*credential.Credential, error) {
