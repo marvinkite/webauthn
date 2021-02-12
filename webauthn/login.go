@@ -105,12 +105,13 @@ func WithTransaction(transaction string) LoginOption {
 	}
 }
 
-// WithTimeout adds a custom timeout in milliseconds for the Authentication Operation
-func WithAuthenticationTimeout(timeout int) LoginOption {
+// WithLoginTimeout adds a custom timeout in milliseconds for the Login Operation
+func WithLoginTimeout(timeout int) LoginOption {
 	return func(cco *protocol.PublicKeyCredentialRequestOptions) {
 		cco.Timeout = timeout
 	}
 }
+
 
 // FinishLogin takes the response from the client and validates it against the user credentials and stored session data
 func (webauthn *WebAuthn) FinishLogin(session SessionData, response *http.Request) (credential *credential.Credential, userId []byte, error error) {
