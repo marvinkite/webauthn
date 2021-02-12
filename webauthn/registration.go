@@ -101,7 +101,7 @@ func WithExtensions(extension protocol.AuthenticationExtensions) RegistrationOpt
 	}
 }
 
-// WithTimeout
+// WithRegistrationTimeout adds a custom timeout in milliseconds for the registration operation
 func WithRegistrationTimeout(timeout int) RegistrationOption {
 	return func(cco *protocol.PublicKeyCredentialCreationOptions) {
 		cco.Timeout = timeout
