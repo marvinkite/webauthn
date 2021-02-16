@@ -68,6 +68,7 @@ func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOptio
 		UserVerification:        creationOptions.AuthenticatorSelection.UserVerification,
 		ConveyancePreference:    creationOptions.Attestation,
 		AuthenticatorAttachment: creationOptions.AuthenticatorSelection.AuthenticatorAttachment,
+		Timeout: creationOptions.Timeout,
 	}
 
 	return &response, &newSessionData, nil
@@ -98,6 +99,13 @@ func WithConveyancePreference(preference protocol.ConveyancePreference) Registra
 func WithExtensions(extension protocol.AuthenticationExtensions) RegistrationOption {
 	return func(cco *protocol.PublicKeyCredentialCreationOptions) {
 		cco.Extensions = extension
+	}
+}
+
+// WithRegistrationTimeout adds a custom timeout in milliseconds for the registration operation
+func WithRegistrationTimeout(timeout int) RegistrationOption {
+	return func(cco *protocol.PublicKeyCredentialCreationOptions) {
+		cco.Timeout = timeout
 	}
 }
 

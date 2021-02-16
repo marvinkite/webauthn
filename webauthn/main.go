@@ -21,7 +21,7 @@ type WebAuthn struct {
 }
 
 type Timeouts struct {
-	Registration int
+	Registration   int
 	Authentication int
 }
 
@@ -36,7 +36,7 @@ type Config struct {
 	AuthenticatorSelection protocol.AuthenticatorSelection
 
 	Timeouts
-	Debug   bool
+	Debug bool
 }
 
 // Validate that the config flags in Config are properly set
