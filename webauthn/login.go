@@ -66,6 +66,7 @@ func (webauthn *WebAuthn) BeginLogin(user User, opts ...LoginOption) (*protocol.
 		Challenge:            base64.RawURLEncoding.EncodeToString(challenge),
 		AllowedCredentialIDs: requestOptions.GetAllowedCredentialIDs(),
 		UserVerification:     requestOptions.UserVerification,
+		Timeout: requestOptions.Timeout,
 	}
 
 	response := protocol.CredentialAssertion{Response: requestOptions}

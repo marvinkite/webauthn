@@ -11,4 +11,5 @@ type SessionData struct {
 	UserVerification        protocol.UserVerificationRequirement `json:"userVerification"`
 	ConveyancePreference    protocol.ConveyancePreference        `json:"conveyance_preference"`
 	AuthenticatorAttachment protocol.AuthenticatorAttachment     `json:"authenticator_attachment"`
+	Timeout                 int                                  `json:"timeout"`
 }
