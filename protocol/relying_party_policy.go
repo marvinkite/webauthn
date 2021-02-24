@@ -29,7 +29,7 @@ func (msp AllowOnlyAuthenticatorFromMetadataServicePolicy) Verify(pcc *ParsedCre
 	return attestationTrustworthinessError
 }
 
-// This policy allows to only allow authenticators with specific AAGUIDs
+// This policy allows authenticators with specific AAGUIDs only
 // This policy only works if a MetadataService is provided and the authenticator sends an attestation
 type WhitelistPolicy struct {
 	Whitelist []string
