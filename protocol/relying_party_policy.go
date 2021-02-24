@@ -29,10 +29,10 @@ func (msp AllowOnlyAuthenticatorFromMetadataServicePolicy) Verify(pcc *ParsedCre
 	return attestationTrustworthinessError
 }
 
-// This policy allows to only allow authenticators with specific AAGUIDs
+// This policy allows authenticators with specific AAGUIDs only
 // This policy only works if a MetadataService is provided and the authenticator sends an attestation
 type WhitelistPolicy struct {
-	whitelist []string
+	Whitelist []string
 }
 
 // WhitelistPolicy - returns an error if no MetadataStatement was found or if the attestation could not be verified as trustworthy with the information provided by the MetadataStatement or if the authenticator aaguid is not in the provided whitelist
@@ -50,12 +50,12 @@ func (wp WhitelistPolicy) Verify(pcc *ParsedCredentialCreationData, attestationT
 		return ErrInvalidAttestation.WithDetails("AAGUID in AttestedCredentialData is not a valid uuid")
 	}
 
-	if wp.whitelist == nil {
+	if wp.Whitelist == nil {
 		return ErrAuthenticatorNotAllowed.WithDetails("The Authenticator " + aaguid.String() + " is not allowed by policy.")
 	}
 
 	isAaguidAllowed := false
-	for _, allowedAaguid := range wp.whitelist {
+	for _, allowedAaguid := range wp.Whitelist {
 		if allowedAaguid == aaguid.String() {
 			isAaguidAllowed = true
 		}

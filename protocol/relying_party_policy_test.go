@@ -134,7 +134,7 @@ func TestAllowOnlyAuthenticatorFromMetadataServicePolicy_Verify(t *testing.T) {
 }
 
 func TestWhitelistPolicy_Verify(t *testing.T) {
-	policy := WhitelistPolicy{whitelist: []string{testMetadataStatement.AaGUID}}
+	policy := WhitelistPolicy{Whitelist: []string{testMetadataStatement.AaGUID}}
 	type args struct {
 		pcc               *ParsedCredentialCreationData
 		trustError        error
