@@ -42,17 +42,17 @@ func TestValidateRpPolicy(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "WhitelistPolicy Without MetadataService",
+			name: "AllowlistPolicy Without MetadataService",
 			args: args{
-				rpPolicy:        protocol.WhitelistPolicy{},
+				rpPolicy:        protocol.AllowlistPolicy{},
 				metadataService: nil,
 			},
 			wantErr: true,
 		},
 		{
-			name: "WhitelistPolicy With MetadataService",
+			name: "AllowlistPolicy With MetadataService",
 			args: args{
-				rpPolicy:        protocol.WhitelistPolicy{},
+				rpPolicy:        protocol.AllowlistPolicy{},
 				metadataService: &testMetadataService{},
 			},
 			wantErr: false,

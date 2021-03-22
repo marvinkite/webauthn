@@ -31,12 +31,12 @@ func (msp AllowOnlyAuthenticatorFromMetadataServicePolicy) Verify(pcc *ParsedCre
 
 // This policy allows authenticators with specific AAGUIDs only
 // This policy only works if a MetadataService is provided and the authenticator sends an attestation
-type WhitelistPolicy struct {
-	Whitelist []string
+type AllowlistPolicy struct {
+	Allowlist []string
 }
 
-// WhitelistPolicy - returns an error if no MetadataStatement was found or if the attestation could not be verified as trustworthy with the information provided by the MetadataStatement or if the authenticator aaguid is not in the provided whitelist
-func (wp WhitelistPolicy) Verify(pcc *ParsedCredentialCreationData, attestationTrustworthinessError error, metadataStatement *metadata.MetadataStatement) error {
+// AllowlistPolicy - returns an error if no MetadataStatement was found or if the attestation could not be verified as trustworthy with the information provided by the MetadataStatement or if the authenticator aaguid is not in the provided allowlist
+func (ap AllowlistPolicy) Verify(pcc *ParsedCredentialCreationData, attestationTrustworthinessError error, metadataStatement *metadata.MetadataStatement) error {
 	if attestationTrustworthinessError != nil {
 		return attestationTrustworthinessError
 	}
@@ -50,12 +50,12 @@ func (wp WhitelistPolicy) Verify(pcc *ParsedCredentialCreationData, attestationT
 		return ErrInvalidAttestation.WithDetails("AAGUID in AttestedCredentialData is not a valid uuid")
 	}
 
-	if wp.Whitelist == nil {
+	if ap.Allowlist == nil {
 		return ErrAuthenticatorNotAllowed.WithDetails("The Authenticator " + aaguid.String() + " is not allowed by policy.")
 	}
 
 	isAaguidAllowed := false
-	for _, allowedAaguid := range wp.Whitelist {
+	for _, allowedAaguid := range ap.Allowlist {
 		if allowedAaguid == aaguid.String() {
 			isAaguidAllowed = true
 		}

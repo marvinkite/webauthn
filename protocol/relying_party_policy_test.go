@@ -133,21 +133,21 @@ func TestAllowOnlyAuthenticatorFromMetadataServicePolicy_Verify(t *testing.T) {
 	}
 }
 
-func TestWhitelistPolicy_Verify(t *testing.T) {
-	policy := WhitelistPolicy{Whitelist: []string{testMetadataStatement.AaGUID}}
+func TestAllowlistPolicy_Verify(t *testing.T) {
+	policy := AllowlistPolicy{Allowlist: []string{testMetadataStatement.AaGUID}}
 	type args struct {
 		pcc               *ParsedCredentialCreationData
 		trustError        error
 		metadataStatement *metadata.MetadataStatement
 	}
 
-	whitelistAaguid, err := uuid.FromString(testMetadataStatement.AaGUID)
+	allowlistAaguid, err := uuid.FromString(testMetadataStatement.AaGUID)
 	if err != nil {
 		t.Errorf("AAGUID is not a valid uuid: %v", err)
 		return
 	}
 
-	notWhitelistAaguid, err := uuid.FromString("00000000-0000-0000-0000-000000000000")
+	notAllowlistAaguid, err := uuid.FromString("00000000-0000-0000-0000-000000000000")
 	if err != nil {
 		t.Errorf("AAGUID is not a valid uuid: %v", err)
 		return
@@ -171,7 +171,7 @@ func TestWhitelistPolicy_Verify(t *testing.T) {
 								Flags:    0,
 								Counter:  0,
 								AttData: AttestedCredentialData{
-									AAGUID:              whitelistAaguid.Bytes(),
+									AAGUID:              allowlistAaguid.Bytes(),
 									CredentialID:        nil,
 									CredentialPublicKey: nil,
 								},
@@ -190,7 +190,7 @@ func TestWhitelistPolicy_Verify(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "Authenticator AAGUID not in whitelist",
+			name: "Authenticator AAGUID not in allowlist",
 			args: args{
 				pcc: &ParsedCredentialCreationData{
 					ParsedPublicKeyCredential: ParsedPublicKeyCredential{},
@@ -202,7 +202,7 @@ func TestWhitelistPolicy_Verify(t *testing.T) {
 								Flags:    0,
 								Counter:  0,
 								AttData: AttestedCredentialData{
-									AAGUID:              notWhitelistAaguid.Bytes(),
+									AAGUID:              notAllowlistAaguid.Bytes(),
 									CredentialID:        nil,
 									CredentialPublicKey: nil,
 								},
@@ -221,7 +221,7 @@ func TestWhitelistPolicy_Verify(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "Authenticator AAGUID in whitelist, but trustworthiness error",
+			name: "Authenticator AAGUID in allowlist, but trustworthiness error",
 			args: args{
 				pcc: &ParsedCredentialCreationData{
 					ParsedPublicKeyCredential: ParsedPublicKeyCredential{},
@@ -233,7 +233,7 @@ func TestWhitelistPolicy_Verify(t *testing.T) {
 								Flags:    0,
 								Counter:  0,
 								AttData: AttestedCredentialData{
-									AAGUID:              whitelistAaguid.Bytes(),
+									AAGUID:              allowlistAaguid.Bytes(),
 									CredentialID:        nil,
 									CredentialPublicKey: nil,
 								},
@@ -252,7 +252,7 @@ func TestWhitelistPolicy_Verify(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "Authenticator AAGUID in whitelist, but no MetadataStatement available",
+			name: "Authenticator AAGUID in allowlist, but no MetadataStatement available",
 			args: args{
 				pcc: &ParsedCredentialCreationData{
 					ParsedPublicKeyCredential: ParsedPublicKeyCredential{},
@@ -264,7 +264,7 @@ func TestWhitelistPolicy_Verify(t *testing.T) {
 								Flags:    0,
 								Counter:  0,
 								AttData: AttestedCredentialData{
-									AAGUID:              whitelistAaguid.Bytes(),
+									AAGUID:              allowlistAaguid.Bytes(),
 									CredentialID:        nil,
 									CredentialPublicKey: nil,
 								},
@@ -289,7 +289,7 @@ func TestWhitelistPolicy_Verify(t *testing.T) {
 			err := policy.Verify(tt.args.pcc, tt.args.trustError, tt.args.metadataStatement)
 
 			if (err != nil) != tt.wantErr {
-				t.Errorf("WhitelistPolicy.Verify() error = %v, wantErr = %v", err, tt.wantErr)
+				t.Errorf("AllowlistPolicy.Verify() error = %v, wantErr = %v", err, tt.wantErr)
 			}
 		})
 	}

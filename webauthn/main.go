@@ -102,9 +102,9 @@ func validateRelyingPartyPolicyRequirements(rpPolicy protocol.RelyingPartyPolicy
 	switch rpPolicy.(type) {
 	case protocol.AllowAllPolicy:
 		return nil
-	case protocol.WhitelistPolicy:
+	case protocol.AllowlistPolicy:
 		if metadataService == nil {
-			return fmt.Errorf("MetadataService must be provided for WhitelistPolicy")
+			return fmt.Errorf("MetadataService must be provided for AllowlistPolicy")
 		}
 	case protocol.AllowOnlyAuthenticatorFromMetadataServicePolicy:
 		if metadataService == nil {
