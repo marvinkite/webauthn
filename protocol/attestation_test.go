@@ -85,7 +85,7 @@ var testAttestationOptions = []string{
 	`{"publicKey": {
 		"challenge": "rWiex8xDOPfiCgyFu4BLW6vVOmXKgPwHrlMCgEs9SBA",
 		"rp": {
-		"name": "http://localhost:9005",
+		"name": "http://localhost",
 		"id": "localhost"
 		},
 		"user": {

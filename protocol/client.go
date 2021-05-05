@@ -50,9 +50,9 @@ const (
 	NotSupported TokenBindingStatus = "not-supported"
 )
 
-// Returns the origin per the HTML spec: (scheme)://(host)[:(port)]
+// Returns the origin : (scheme)://(host)
 func FullyQualifiedOrigin(u *url.URL) string {
-	return fmt.Sprintf("%s://%s", u.Scheme, u.Host)
+	return strings.TrimSuffix(fmt.Sprintf("%s://%s", u.Scheme, u.Host), fmt.Sprintf(":%s", u.Port()))
 }
 
 // Handles steps 3 through 6 of verfying the registering client data of a
