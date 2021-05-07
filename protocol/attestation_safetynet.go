@@ -102,7 +102,7 @@ func verifySafetyNetFormat(att AttestationObject, clientDataHash []byte) (string
 		return safetyNetAttestationKey, nil, ErrInvalidAttestation.WithDetails("Invalid nonce for in SafetyNet response")
 	}
 
-	// §8.5.4 Let attestationCert be the attestation certificate (https://www.w3.org/TR/webauthn/#attestation-certificate)
+	// §8.5.4 Let attestationCert be the attestation certificate (https://www.w3.org/TR/webauthn-1/#attestation-certificate)
 	certChain := token.Header["x5c"].([]interface{})
 	l := make([]byte, base64.StdEncoding.DecodedLen(len(certChain[0].(string))))
 	n, err := base64.StdEncoding.Decode(l, []byte(certChain[0].(string)))

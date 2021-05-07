@@ -108,7 +108,7 @@ func ParseCredentialCreationResponseBody(body io.Reader) (*ParsedCredentialCreat
 }
 
 // Verifies the Client and Attestation data as laid out by §7.1. Registering a new credential
-// https://www.w3.org/TR/webauthn/#registering-a-new-credential
+// https://www.w3.org/TR/webauthn-1/#registering-a-new-credential
 func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUser bool, relyingPartyID, relyingPartyOrigin string, metadataService metadata.MetadataService, credentialStore credential.CredentialService, rpPolicy RelyingPartyPolicy) error {
 
 	// Handles steps 3 through 6 - Verifying the Client Data against the Relying Party's stored data

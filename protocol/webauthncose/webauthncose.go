@@ -21,7 +21,7 @@ import (
 // using fxamacker's cbor library ("github.com/fxamacker/cbor/v2") which is why there are cbor tags
 // included. The tag field values correspond to the IANA COSE keys that give their respective
 // values.
-// See §6.4.1.1 https://www.w3.org/TR/webauthn/#sctn-encoded-credPubKey-examples for examples of this
+// See §6.4.1.1 https://www.w3.org/TR/webauthn-1/#sctn-encoded-credPubKey-examples for examples of this
 // COSE data.
 type PublicKeyData struct {
 	// Decode the results to int by default.
@@ -183,7 +183,7 @@ func ParsePublicKey(keyBytes []byte) (interface{}, error) {
 
 // COSEAlgorithmIdentifier From §5.10.5. A number identifying a cryptographic algorithm. The algorithm
 // identifiers SHOULD be values registered in the IANA COSE Algorithms registry
-// [https://www.w3.org/TR/webauthn/#biblio-iana-cose-algs-reg], for instance, -7 for "ES256"
+// [https://www.w3.org/TR/webauthn-1/#biblio-iana-cose-algs-reg], for instance, -7 for "ES256"
 //  and -257 for "RS256".
 type COSEAlgorithmIdentifier int
 

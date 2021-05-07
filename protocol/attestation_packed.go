@@ -21,7 +21,7 @@ func init() {
 	RegisterAttestationFormat(packedAttestationKey, verifyPackedFormat)
 }
 
-// From §8.2. https://www.w3.org/TR/webauthn/#packed-attestation
+// From §8.2. https://www.w3.org/TR/webauthn-1/#packed-attestation
 // The packed attestation statement looks like:
 //		packedStmtFormat = {
 //		 	alg: COSEAlgorithmIdentifier,
@@ -118,7 +118,7 @@ func handleBasicAttestation(signature, clientDataHash, authData, aaguid []byte, 
 	}
 
 	// Step 2.2 Verify that attestnCert meets the requirements in §8.2.1 Packed attestation statement certificate requirements.
-	// §8.2.1 can be found here https://www.w3.org/TR/webauthn/#packed-attestation-cert-requirements
+	// §8.2.1 can be found here https://www.w3.org/TR/webauthn-1/#packed-attestation-cert-requirements
 
 	// Step 2.2.1 (from §8.2.1) Version MUST be set to 3 (which is indicated by an ASN.1 INTEGER with value 2).
 	if attCert.Version != 3 {
@@ -222,10 +222,10 @@ func handleBasicAttestation(signature, clientDataHash, authData, aaguid []byte, 
 	}
 
 	// Note for 2.2.5 An Authority Information Access (AIA) extension with entry id-ad-ocsp and a CRL
-	// Distribution Point extension [RFC5280](https://www.w3.org/TR/webauthn/#biblio-rfc5280) are
+	// Distribution Point extension [RFC5280](https://www.w3.org/TR/webauthn-1/#biblio-rfc5280) are
 	// both OPTIONAL as the status of many attestation certificates is available through authenticator
 	// metadata services. See, for example, the FIDO Metadata Service
-	// [FIDOMetadataService] (https://www.w3.org/TR/webauthn/#biblio-fidometadataservice)
+	// [FIDOMetadataService] (https://www.w3.org/TR/webauthn-1/#biblio-fidometadataservice)
 
 	// Step 2.4 If successful, return attestation type Basic and attestation trust path x5c.
 	// We don't handle trust paths yet but we're done

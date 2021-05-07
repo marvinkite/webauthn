@@ -12,9 +12,9 @@ var minAuthDataLength = 37
 
 // The AuthenticatorResponse. Authenticators respond to Relying Party requests by returning an object derived from the
 // AuthenticatorResponse interface. See §5.2. Authenticator Responses
-// https://www.w3.org/TR/webauthn/#iface-authenticatorresponse
+// https://www.w3.org/TR/webauthn-1/#iface-authenticatorresponse
 type AuthenticatorResponse struct {
-	// From the spec https://www.w3.org/TR/webauthn/#dom-authenticatorresponse-clientdatajson
+	// From the spec https://www.w3.org/TR/webauthn-1/#dom-authenticatorresponse-clientdatajson
 	// This attribute contains a JSON serialization of the client data passed to the authenticator
 	// by the client in its call to either create() or get().
 	ClientDataJSON URLEncodedBase64 `json:"clientDataJSON"`
@@ -50,7 +50,7 @@ type AttestedCredentialData struct {
 	CredentialPublicKey []byte `json:"public_key"`
 }
 
-// AuthenticatorAttachment https://www.w3.org/TR/webauthn/#platform-attachment
+// AuthenticatorAttachment https://www.w3.org/TR/webauthn-1/#platform-attachment
 type AuthenticatorAttachment string
 
 const (
@@ -72,7 +72,7 @@ const (
 // how an authenticator may be reached. A Relying Party may obtain a list of transports hints from some
 // attestation statement formats or via some out-of-band mechanism; it is outside the scope of this
 // specification to define that mechanism.
-// See §5.10.4. Authenticator Transport https://www.w3.org/TR/webauthn/#transport
+// See §5.10.4. Authenticator Transport https://www.w3.org/TR/webauthn-1/#transport
 type AuthenticatorTransport string
 
 const (
@@ -89,7 +89,7 @@ const (
 // UserVerificationRequirement represents the UserVerfication string.
 // A WebAuthn Relying Party may require user verification for some of its operations but not for others,
 // and may use this type to express its needs.
-// See §5.10.6. User Verification Requirement Enumeration https://www.w3.org/TR/webauthn/#userVerificationRequirement
+// See §5.10.6. User Verification Requirement Enumeration https://www.w3.org/TR/webauthn-1/#userVerificationRequirement
 type UserVerificationRequirement string
 
 const (
@@ -149,7 +149,7 @@ func (flag AuthenticatorFlags) HasExtensions() bool {
 // The authenticator data has a compact but extensible encoding. This is desired since authenticators can be
 // devices with limited capabilities and low power requirements, with much simpler software stacks than the client platform.
 // The authenticator data structure is a byte array of 37 bytes or more, and is laid out in this table:
-// https://www.w3.org/TR/webauthn/#table-authData
+// https://www.w3.org/TR/webauthn-1/#table-authData
 func (a *AuthenticatorData) Unmarshal(rawAuthData []byte) error {
 	if minAuthDataLength > len(rawAuthData) {
 		err := ErrBadRequest.WithDetails("Authenticator data length too short")

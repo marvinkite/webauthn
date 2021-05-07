@@ -13,7 +13,7 @@ type CredentialAssertion struct {
 }
 
 // In order to create a Credential via create(), the caller specifies a few parameters in a CredentialCreationOptions object.
-// See §5.4. Options for Credential Creation https://www.w3.org/TR/webauthn/#dictionary-makecredentialoptions
+// See §5.4. Options for Credential Creation https://www.w3.org/TR/webauthn-1/#dictionary-makecredentialoptions
 type PublicKeyCredentialCreationOptions struct {
 	Challenge              Challenge                `json:"challenge"`
 	RelyingParty           RelyingPartyEntity       `json:"rp"`
@@ -28,7 +28,7 @@ type PublicKeyCredentialCreationOptions struct {
 
 // The PublicKeyCredentialRequestOptions dictionary supplies get() with the data it needs to generate an assertion.
 // Its challenge member MUST be present, while its other members are OPTIONAL.
-// See §5.5. Options for Assertion Generation https://www.w3.org/TR/webauthn/#assertion-options
+// See §5.5. Options for Assertion Generation https://www.w3.org/TR/webauthn-1/#assertion-options
 type PublicKeyCredentialRequestOptions struct {
 	Challenge          Challenge                   `json:"challenge"`
 	Timeout            int                         `json:"timeout,omitempty"`
@@ -41,7 +41,7 @@ type PublicKeyCredentialRequestOptions struct {
 // This dictionary contains the attributes that are specified by a caller when referring to a public
 // key credential as an input parameter to the create() or get() methods. It mirrors the fields of
 // the PublicKeyCredential object returned by the latter methods.
-// See §5.10.3. Credential Descriptor https://www.w3.org/TR/webauthn/#credential-dictionary
+// See §5.10.3. Credential Descriptor https://www.w3.org/TR/webauthn-1/#credential-dictionary
 type CredentialDescriptor struct {
 	// The valid credential types.
 	Type CredentialType `json:"type"`
@@ -63,7 +63,7 @@ type CredentialParameter struct {
 // more credential types are defined. The values of this enumeration are used
 // for versioning the Authentication Assertion and attestation structures according
 // to the type of the authenticator.
-// See §5.10.3. Credential Descriptor https://www.w3.org/TR/webauthn/#credentialType
+// See §5.10.3. Credential Descriptor https://www.w3.org/TR/webauthn-1/#credentialType
 type CredentialType string
 
 const (
@@ -79,7 +79,7 @@ type AuthenticationExtensions map[string]interface{}
 
 // WebAuthn Relying Parties may use the AuthenticatorSelectionCriteria dictionary to specify their requirements
 // regarding authenticator attributes. See §5.4.4. Authenticator Selection Criteria
-// https://www.w3.org/TR/webauthn/#authenticatorSelection
+// https://www.w3.org/TR/webauthn-1/#authenticatorSelection
 type AuthenticatorSelection struct {
 	// AuthenticatorAttachment If this member is present, eligible authenticators are filtered to only
 	// authenticators attached with the specified AuthenticatorAttachment enum
@@ -95,7 +95,7 @@ type AuthenticatorSelection struct {
 }
 
 // WebAuthn Relying Parties may use AttestationConveyancePreference to specify their preference regarding
-// attestation conveyance during credential generation. See §5.4.6. https://www.w3.org/TR/webauthn/#attestation-convey
+// attestation conveyance during credential generation. See §5.4.6. https://www.w3.org/TR/webauthn-1/#attestation-convey
 type ConveyancePreference string
 
 const (

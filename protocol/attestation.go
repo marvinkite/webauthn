@@ -8,7 +8,7 @@ import (
 	"github.com/teamhanko/webauthn/protocol/webauthncose"
 )
 
-// From §5.2.1 (https://www.w3.org/TR/webauthn/#authenticatorattestationresponse)
+// From §5.2.1 (https://www.w3.org/TR/webauthn-1/#authenticatorattestationresponse)
 // "The authenticator's response to a client’s request for the creation
 // of a new public key credential. It contains information about the new credential
 // that can be used to identify it for later use, and metadata that can be used by
@@ -51,7 +51,7 @@ type ParsedAttestationResponse struct {
 // a trust decision. However, if an attestation key pair is not available, then the authenticator MUST
 // perform self attestation of the credential public key with the corresponding credential private key.
 // All this information is returned by authenticators any time a new public key credential is generated, in
-// the overall form of an attestation object. (https://www.w3.org/TR/webauthn/#attestation-object)
+// the overall form of an attestation object. (https://www.w3.org/TR/webauthn-1/#attestation-object)
 //
 type AttestationObject struct {
 	// The authenticator data, including the newly created public key. See AuthenticatorData for more info
@@ -125,7 +125,7 @@ func (attestationObject *AttestationObject) Verify(relyingPartyID string, client
 	// WebAuthn Attestation Statement Format Identifier values. The up-to-date
 	// list of registered WebAuthn Attestation Statement Format Identifier
 	// values is maintained in the IANA registry of the same name
-	// [WebAuthn-Registries] (https://www.w3.org/TR/webauthn/#biblio-webauthn-registries).
+	// [WebAuthn-Registries] (https://www.w3.org/TR/webauthn-1/#biblio-webauthn-registries).
 
 	// Since there is not an active registry yet, we'll check it against our internal
 	// Supported types.

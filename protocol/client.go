@@ -10,7 +10,7 @@ import (
 // CollectedClientData represents the contextual bindings of both the WebAuthn Relying Party
 // and the client. It is a key-value mapping whose keys are strings. Values can be any type
 // that has a valid encoding in JSON. Its structure is defined by the following Web IDL.
-// https://www.w3.org/TR/webauthn/#sec-client-data
+// https://www.w3.org/TR/webauthn-1/#sec-client-data
 type CollectedClientData struct {
 	// Type the string "webauthn.create" when creating new credentials,
 	// and "webauthn.get" when getting an assertion from an existing credential. The
@@ -57,8 +57,8 @@ func FullyQualifiedOrigin(u *url.URL) string {
 
 // Handles steps 3 through 6 of verfying the registering client data of a
 // new credential and steps 7 through 10 of verifying an authentication assertion
-// See https://www.w3.org/TR/webauthn/#registering-a-new-credential
-// and https://www.w3.org/TR/webauthn/#verifying-assertion
+// See https://www.w3.org/TR/webauthn-1/#registering-a-new-credential
+// and https://www.w3.org/TR/webauthn-1/#verifying-assertion
 func (c *CollectedClientData) Verify(storedChallenge string, ceremony CeremonyType, relyingPartyOrigin string) error {
 
 	// Registration Step 3. Verify that the value of C.type is webauthn.create.

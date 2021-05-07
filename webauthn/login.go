@@ -19,7 +19,7 @@ type LoginOption func(*protocol.PublicKeyCredentialRequestOptions)
 
 // BeginLogin creates the CredentialAssertion data payload that should be sent to the user agent for beginning the
 // login/assertion process. The format of this data can be seen in §5.5 of the WebAuthn specification
-// (https://www.w3.org/TR/webauthn/#assertion-options). These default values can be amended by providing
+// (https://www.w3.org/TR/webauthn-1/#assertion-options). These default values can be amended by providing
 // additional LoginOption parameters. This function also returns sessionData, that must be stored by the
 // RP in a secure manner and then provided to the FinishLogin function. This data helps us verify the
 // ownership of the credential being retreived.
@@ -75,7 +75,7 @@ func (webauthn *WebAuthn) BeginLogin(user User, opts ...LoginOption) (*protocol.
 }
 
 // WithAllowedCredentials updates the allowed credential list with Credential Descripiptors, discussed in §5.10.3
-// (https://www.w3.org/TR/webauthn/#dictdef-publickeycredentialdescriptor) with user-supplied values
+// (https://www.w3.org/TR/webauthn-1/#dictdef-publickeycredentialdescriptor) with user-supplied values
 func WithAllowedCredentials(allowList []protocol.CredentialDescriptor) LoginOption {
 	return func(cco *protocol.PublicKeyCredentialRequestOptions) {
 		cco.AllowedCredentials = allowList

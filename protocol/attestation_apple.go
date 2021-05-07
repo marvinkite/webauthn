@@ -20,7 +20,7 @@ func init() {
 	RegisterAttestationFormat(appleAttestationKey, verifyAppleAttestationFormat)
 }
 
-// From §8.8. https://www.w3.org/TR/webauthn/#sctn-apple-anonymous-attestation
+// From §8.8. https://www.w3.org/TR/webauthn-1/#sctn-apple-anonymous-attestation
 // The apple attestation statement looks like:
 // appleStmtFormat = {
 // x5c: [credCert: bytes, * (caCert: bytes)]

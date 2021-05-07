@@ -15,7 +15,7 @@ func init() {
 	RegisterAttestationFormat(androidAttestationKey, verifyAndroidKeyFormat)
 }
 
-// From §8.4. https://www.w3.org/TR/webauthn/#android-key-attestation
+// From §8.4. https://www.w3.org/TR/webauthn-1/#android-key-attestation
 // The android-key attestation statement looks like:
 // $$attStmtType //= (
 // 	fmt: "android-key",
