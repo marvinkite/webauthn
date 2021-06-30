@@ -63,7 +63,7 @@ func (webauthn *WebAuthn) BeginLogin(user User, opts ...LoginOption) (*protocol.
 	}
 
 	newSessionData := SessionData{
-		Challenge:            base64.RawURLEncoding.EncodeToString(challenge),
+		Challenge:            base64.RawURLEncoding.EncodeToString(requestOptions.Challenge),
 		AllowedCredentialIDs: requestOptions.GetAllowedCredentialIDs(),
 		UserVerification:     requestOptions.UserVerification,
 		Timeout: requestOptions.Timeout,
