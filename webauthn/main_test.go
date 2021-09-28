@@ -1,8 +1,8 @@
 package webauthn
 
 import (
-	"github.com/teamhanko/webauthn/metadata"
-	"github.com/teamhanko/webauthn/protocol"
+	"github.com/marvinkite/webauthn/metadata"
+	"github.com/marvinkite/webauthn/protocol"
 	"reflect"
 	"testing"
 )

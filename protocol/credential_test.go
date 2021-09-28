@@ -9,9 +9,9 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/teamhanko/webauthn/cbor_options"
-	"github.com/teamhanko/webauthn/credential"
-	"github.com/teamhanko/webauthn/metadata"
+	"github.com/marvinkite/webauthn/cbor_options"
+	"github.com/marvinkite/webauthn/credential"
+	"github.com/marvinkite/webauthn/metadata"
 )
 
 func TestParseCredentialCreationResponse(t *testing.T) {

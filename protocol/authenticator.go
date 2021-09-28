@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/fxamacker/cbor/v2"
-	"github.com/teamhanko/webauthn/cbor_options"
+	"github.com/marvinkite/webauthn/cbor_options"
 )
 
 var minAuthDataLength = 37

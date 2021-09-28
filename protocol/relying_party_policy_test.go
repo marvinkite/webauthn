@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/teamhanko/webauthn/metadata"
+	"github.com/marvinkite/webauthn/metadata"
 )
 
 func TestAllowAllPolicy_Verify(t *testing.T) {

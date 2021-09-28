@@ -2,7 +2,7 @@ package protocol
 
 import (
 	"github.com/google/uuid"
-	"github.com/teamhanko/webauthn/metadata"
+	"github.com/marvinkite/webauthn/metadata"
 )
 
 type RelyingPartyPolicy interface {

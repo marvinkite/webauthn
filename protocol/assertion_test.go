@@ -3,7 +3,7 @@ package protocol
 import (
 	"bytes"
 	"encoding/base64"
-	"github.com/teamhanko/webauthn/cbor_options"
+	"github.com/marvinkite/webauthn/cbor_options"
 	"io/ioutil"
 	"net/http"
 	"reflect"

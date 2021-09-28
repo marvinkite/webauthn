@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
-	"github.com/teamhanko/webauthn/credential"
+	"github.com/marvinkite/webauthn/credential"
 	"net/http"
 
-	"github.com/teamhanko/webauthn/protocol"
+	"github.com/marvinkite/webauthn/protocol"
 )
 
 // BEGIN REGISTRATION

@@ -11,9 +11,9 @@ import (
 	"github.com/biter777/countries"
 
 	"github.com/google/uuid"
-	"github.com/teamhanko/webauthn/metadata"
+	"github.com/marvinkite/webauthn/metadata"
 
-	"github.com/teamhanko/webauthn/protocol/webauthncose"
+	"github.com/marvinkite/webauthn/protocol/webauthncose"
 )
 
 var packedAttestationKey = "packed"

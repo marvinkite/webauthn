@@ -9,7 +9,7 @@ import (
 	"crypto/x509"
 	"encoding/binary"
 	"fmt"
-	"github.com/teamhanko/webauthn/protocol/webauthncose"
+	"github.com/marvinkite/webauthn/protocol/webauthncose"
 	"math/big"
 	"time"
 )

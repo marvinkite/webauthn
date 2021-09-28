@@ -2,11 +2,11 @@ package webauthn
 
 import (
 	"encoding/base64"
-	"github.com/teamhanko/webauthn/credential"
+	"github.com/marvinkite/webauthn/credential"
 	"net/http"
 
-	"github.com/teamhanko/webauthn/protocol"
-	"github.com/teamhanko/webauthn/protocol/webauthncose"
+	"github.com/marvinkite/webauthn/protocol"
+	"github.com/marvinkite/webauthn/protocol/webauthncose"
 )
 
 // BEGIN REGISTRATION
