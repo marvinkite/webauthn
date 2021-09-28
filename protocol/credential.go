@@ -9,12 +9,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/cloudflare/cfssl/scan/crypto/sha1"
-	uuid "github.com/satori/go.uuid"
-	"github.com/teamhanko/webauthn/credential"
-	"github.com/teamhanko/webauthn/metadata"
 	"io"
 	"net/http"
+
+	"github.com/cloudflare/cfssl/scan/crypto/sha1"
+	"github.com/google/uuid"
+	"github.com/teamhanko/webauthn/credential"
+	"github.com/teamhanko/webauthn/metadata"
 )
 
 // The basic credential type that is inherited by WebAuthn's

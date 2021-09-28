@@ -11,10 +11,10 @@ import (
 	"net/http"
 
 	"github.com/cloudflare/cfssl/revoke"
+	"github.com/google/uuid"
 	"github.com/mitchellh/mapstructure"
-	uuid "github.com/satori/go.uuid"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 // Metadata is a map of authenticator AAGUIDs to corresponding metadata statements
@@ -239,7 +239,7 @@ type VerificationMethodDescriptor struct {
 
 // VerificationMethodANDCombinations MUST be non-empty. It is a list containing the base user verification methods which must be passed as part of a successful user verification.
 type VerificationMethodANDCombinations struct {
-	//This list will contain only a single entry if using a single user verification method is sufficient.
+	// This list will contain only a single entry if using a single user verification method is sufficient.
 	// If this list contains multiple entries, then all of the listed user verification methods MUST be passed as part of the user verification process.
 	VerificationMethodAndCombinations []VerificationMethodDescriptor `json:"verificationMethodANDCombinations"`
 }

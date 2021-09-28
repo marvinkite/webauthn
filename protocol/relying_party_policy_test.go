@@ -1,9 +1,10 @@
 package protocol
 
 import (
-	uuid "github.com/satori/go.uuid"
-	"github.com/teamhanko/webauthn/metadata"
 	"testing"
+
+	"github.com/google/uuid"
+	"github.com/teamhanko/webauthn/metadata"
 )
 
 func TestAllowAllPolicy_Verify(t *testing.T) {
@@ -141,13 +142,13 @@ func TestAllowlistPolicy_Verify(t *testing.T) {
 		metadataStatement *metadata.MetadataStatement
 	}
 
-	allowlistAaguid, err := uuid.FromString(testMetadataStatement.AaGUID)
+	allowlistAaguid, err := uuid.Parse(testMetadataStatement.AaGUID)
 	if err != nil {
 		t.Errorf("AAGUID is not a valid uuid: %v", err)
 		return
 	}
 
-	notAllowlistAaguid, err := uuid.FromString("00000000-0000-0000-0000-000000000000")
+	notAllowlistAaguid, err := uuid.Parse("00000000-0000-0000-0000-000000000000")
 	if err != nil {
 		t.Errorf("AAGUID is not a valid uuid: %v", err)
 		return
@@ -171,7 +172,7 @@ func TestAllowlistPolicy_Verify(t *testing.T) {
 								Flags:    0,
 								Counter:  0,
 								AttData: AttestedCredentialData{
-									AAGUID:              allowlistAaguid.Bytes(),
+									AAGUID:              allowlistAaguid[:],
 									CredentialID:        nil,
 									CredentialPublicKey: nil,
 								},
@@ -202,7 +203,7 @@ func TestAllowlistPolicy_Verify(t *testing.T) {
 								Flags:    0,
 								Counter:  0,
 								AttData: AttestedCredentialData{
-									AAGUID:              notAllowlistAaguid.Bytes(),
+									AAGUID:              notAllowlistAaguid[:],
 									CredentialID:        nil,
 									CredentialPublicKey: nil,
 								},
@@ -233,7 +234,7 @@ func TestAllowlistPolicy_Verify(t *testing.T) {
 								Flags:    0,
 								Counter:  0,
 								AttData: AttestedCredentialData{
-									AAGUID:              allowlistAaguid.Bytes(),
+									AAGUID:              allowlistAaguid[:],
 									CredentialID:        nil,
 									CredentialPublicKey: nil,
 								},
@@ -264,7 +265,7 @@ func TestAllowlistPolicy_Verify(t *testing.T) {
 								Flags:    0,
 								Counter:  0,
 								AttData: AttestedCredentialData{
-									AAGUID:              allowlistAaguid.Bytes(),
+									AAGUID:              allowlistAaguid[:],
 									CredentialID:        nil,
 									CredentialPublicKey: nil,
 								},

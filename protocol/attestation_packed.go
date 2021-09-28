@@ -5,11 +5,12 @@ import (
 	"crypto/x509"
 	"encoding/asn1"
 	"fmt"
-	"github.com/biter777/countries"
 	"strings"
 	"time"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/biter777/countries"
+
+	"github.com/google/uuid"
 	"github.com/teamhanko/webauthn/metadata"
 
 	"github.com/teamhanko/webauthn/protocol/webauthncose"

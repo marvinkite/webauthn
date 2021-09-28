@@ -1,7 +1,7 @@
 package protocol
 
 import (
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 	"github.com/teamhanko/webauthn/metadata"
 )
 
