@@ -15,7 +15,7 @@ import (
 
 type RegistrationOption func(*protocol.PublicKeyCredentialCreationOptions)
 
-// Generate a new set of registration data to be sent to the client and authenticator.
+// BeginRegistration generate a new set of registration data to be sent to the client and authenticator.
 func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOption) (*protocol.CredentialCreation, *SessionData, error) {
 	challenge, err := protocol.CreateChallenge()
 	if err != nil {
@@ -41,10 +41,17 @@ func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOptio
 
 	credentialParams := defaultRegistrationCredentialParameters()
 
-	rrk := false
 	authSelection := protocol.AuthenticatorSelection{
-		RequireResidentKey: &rrk,
-		UserVerification:   protocol.VerificationPreferred,
+		AuthenticatorAttachment: webauthn.Config.AuthenticatorSelection.AuthenticatorAttachment,
+		RequireResidentKey:      webauthn.Config.AuthenticatorSelection.RequireResidentKey,
+		UserVerification:        webauthn.Config.AuthenticatorSelection.UserVerification,
+	}
+	if authSelection.RequireResidentKey == nil {
+		rrk := false
+		authSelection.RequireResidentKey = &rrk
+	}
+	if authSelection.UserVerification == "" {
+		authSelection.UserVerification = protocol.VerificationPreferred
 	}
 
 	creationOptions := protocol.PublicKeyCredentialCreationOptions{
@@ -68,7 +75,7 @@ func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOptio
 		UserVerification:        creationOptions.AuthenticatorSelection.UserVerification,
 		ConveyancePreference:    creationOptions.Attestation,
 		AuthenticatorAttachment: creationOptions.AuthenticatorSelection.AuthenticatorAttachment,
-		Timeout: creationOptions.Timeout,
+		Timeout:                 creationOptions.Timeout,
 	}
 
 	return &response, &newSessionData, nil
@@ -88,14 +95,14 @@ func WithExclusions(excludeList []protocol.CredentialDescriptor) RegistrationOpt
 	}
 }
 
-// Provide non-default parameters regarding whether the authenticator should attest to the credential.
+// WithConveyancePreference provide non-default parameters regarding whether the authenticator should attest to the credential.
 func WithConveyancePreference(preference protocol.ConveyancePreference) RegistrationOption {
 	return func(cco *protocol.PublicKeyCredentialCreationOptions) {
 		cco.Attestation = preference
 	}
 }
 
-// Provide extension parameter to registration options
+// WithExtensions provide extension parameter to registration options
 func WithExtensions(extension protocol.AuthenticationExtensions) RegistrationOption {
 	return func(cco *protocol.PublicKeyCredentialCreationOptions) {
 		cco.Extensions = extension
@@ -109,7 +116,7 @@ func WithRegistrationTimeout(timeout int) RegistrationOption {
 	}
 }
 
-// Take the response from the authenticator and client and verify the credential against the user's credentials and
+// FinishRegistration take the response from the authenticator and client and verify the credential against the user's credentials and
 // session data.
 func (webauthn *WebAuthn) FinishRegistration(session SessionData, response *http.Request) (*credential.Credential, error) {
 	parsedResponse, err := protocol.ParseCredentialCreationResponse(response)

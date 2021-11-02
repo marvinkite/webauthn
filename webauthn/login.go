@@ -132,7 +132,8 @@ func (webauthn *WebAuthn) ValidateLogin(session SessionData, parsedResponse *pro
 	if len(session.AllowedCredentialIDs) > 0 {
 		var credentialAllowed bool
 		for _, allowedCredentialId := range session.AllowedCredentialIDs {
-			if bytes.Equal(allowedCredentialId, parsedResponse.Response.AuthenticatorData.AttData.CredentialID) {
+			// TODO check if AttData could be really null! if bytes.Equal(allowedCredentialId, parsedResponse.Response.AuthenticatorData.AttData.CredentialID) {
+			if bytes.Equal(allowedCredentialId, parsedResponse.ParsedPublicKeyCredential.RawID) {
 				credentialAllowed = true
 				break
 			}
