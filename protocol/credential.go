@@ -33,7 +33,7 @@ type Credential struct {
 }
 
 // The PublicKeyCredential interface inherits from Credential, and contains
-//  the attributes that are returned to the caller when a new credential
+// the attributes that are returned to the caller when a new credential
 // is created, or a new assertion is requested.
 type ParsedCredential struct {
 	ID   string `cbor:"id"`
@@ -42,25 +42,29 @@ type ParsedCredential struct {
 
 type PublicKeyCredential struct {
 	Credential
-	RawID      URLEncodedBase64                      `json:"rawId"`
-	Extensions AuthenticationExtensionsClientOutputs `json:"extensions,omitempty"`
+	RawID                  URLEncodedBase64                      `json:"rawId"`
+	Extensions             AuthenticationExtensionsClientOutputs `json:"extensions,omitempty"`
+	ClientExtensionResults AuthenticationExtensionsClientOutputs `json:"clientExtensionResults,omitempty"`
 }
 
 type ParsedPublicKeyCredential struct {
 	ParsedCredential
-	RawID      []byte                                `json:"rawId"`
-	Extensions AuthenticationExtensionsClientOutputs `json:"extensions,omitempty"`
+	RawID                  []byte                                `json:"rawId"`
+	Extensions             AuthenticationExtensionsClientOutputs `json:"extensions,omitempty"`
+	ClientExtensionResults AuthenticationExtensionsClientOutputs `json:"clientExtensionResults,omitempty"`
 }
 
 type CredentialCreationResponse struct {
 	PublicKeyCredential
 	AttestationResponse AuthenticatorAttestationResponse `json:"response"`
+	Transports          []string                         `json:"transports,omitempty"`
 }
 
 type ParsedCredentialCreationData struct {
 	ParsedPublicKeyCredential
-	Response ParsedAttestationResponse
-	Raw      CredentialCreationResponse
+	Response   ParsedAttestationResponse
+	Transports []AuthenticatorTransport
+	Raw        CredentialCreationResponse
 }
 
 func ParseCredentialCreationResponse(response *http.Request) (*ParsedCredentialCreationData, error) {
@@ -95,8 +99,12 @@ func ParseCredentialCreationResponseBody(body io.Reader) (*ParsedCredentialCreat
 	}
 
 	var pcc ParsedCredentialCreationData
-	pcc.ID, pcc.RawID, pcc.Type = ccr.ID, ccr.RawID, ccr.Type
+	pcc.ID, pcc.RawID, pcc.Type, pcc.ClientExtensionResults = ccr.ID, ccr.RawID, ccr.Type, ccr.ClientExtensionResults
 	pcc.Raw = ccr
+
+	for _, t := range ccr.Transports {
+		pcc.Transports = append(pcc.Transports, AuthenticatorTransport(t))
+	}
 
 	parsedAttestationResponse, err := ccr.AttestationResponse.Parse()
 	if err != nil {
@@ -109,11 +117,11 @@ func ParseCredentialCreationResponseBody(body io.Reader) (*ParsedCredentialCreat
 }
 
 // Verifies the Client and Attestation data as laid out by §7.1. Registering a new credential
-// https://www.w3.org/TR/webauthn-1/#registering-a-new-credential
-func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUser bool, relyingPartyID, relyingPartyOrigin string, metadataService metadata.MetadataService, credentialStore credential.CredentialService, rpPolicy RelyingPartyPolicy) error {
+// https://www.w3.org/TR/webauthn/#registering-a-new-credential
+func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUser bool, relyingPartyID string, relyingPartyOrigins []string, metadataService metadata.MetadataService, credentialStore credential.CredentialService, rpPolicy RelyingPartyPolicy) error {
 
 	// Handles steps 3 through 6 - Verifying the Client Data against the Relying Party's stored data
-	verifyError := pcc.Response.CollectedClientData.Verify(storedChallenge, CreateCeremony, relyingPartyOrigin)
+	verifyError := pcc.Response.CollectedClientData.Verify(storedChallenge, CreateCeremony, relyingPartyOrigins)
 	if verifyError != nil {
 		return verifyError
 	}
@@ -231,6 +239,64 @@ func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUs
 	return nil
 }
 
+// GetAppID takes a AuthenticationExtensions object or nil. It then performs the following checks in order:
+//
+// 1. Check that the Session Data's AuthenticationExtensions has been provided and if it hasn't return an error.
+// 2. Check that the AuthenticationExtensionsClientOutputs contains the extensions output and return an empty string if it doesn't.
+// 3. Check that the Credential AttestationType is `fido-u2f` and return an empty string if it isn't.
+// 4. Check that the AuthenticationExtensionsClientOutputs contains the appid key and if it doesn't return an empty string.
+// 5. Check that the AuthenticationExtensionsClientOutputs appid is a bool and if it isn't return an error.
+// 6. Check that the appid output is true and if it isn't return an empty string.
+// 7. Check that the Session Data has an appid extension defined and if it doesn't return an error.
+// 8. Check that the appid extension in Session Data is a string and if it isn't return an error.
+// 9. Return the appid extension value from the Session data.
+func (ppkc ParsedPublicKeyCredential) GetAppID(authExt AuthenticationExtensions, credentialAttestationType string) (appID string, err error) {
+	var (
+		value, clientValue interface{}
+		enableAppID, ok    bool
+	)
+
+	if authExt == nil {
+		return "", nil
+	}
+
+	if ppkc.ClientExtensionResults == nil {
+		return "", nil
+	}
+
+	// If the credential does not have the correct attestation type it is assumed to NOT be a fido-u2f credential.
+	// https://w3c.github.io/webauthn/#sctn-fido-u2f-attestation
+	if credentialAttestationType != CredentialTypeFIDOU2F {
+		return "", nil
+	}
+
+	if clientValue, ok = ppkc.ClientExtensionResults[ExtensionAppID]; !ok {
+		return "", nil
+	}
+
+	if enableAppID, ok = clientValue.(bool); !ok {
+		return "", ErrBadRequest.WithDetails("Client Output appid did not have the expected type")
+	}
+
+	if !enableAppID {
+		return "", nil
+	}
+
+	if value, ok = authExt[ExtensionAppID]; !ok {
+		return "", ErrBadRequest.WithDetails("Session Data does not have an appid but Client Output indicates it should be set")
+	}
+
+	if appID, ok = value.(string); !ok {
+		return "", ErrBadRequest.WithDetails("Session Data appid did not have the expected type")
+	}
+
+	return appID, nil
+}
+
+const (
+	CredentialTypeFIDOU2F = "fido-u2f"
+)
+
 func (pcc *ParsedCredentialCreationData) isBasicOrAttCaAttestation() bool {
 	_, x5cPresent := pcc.Response.AttestationObject.AttStatement["x5c"].([]interface{})
 	return x5cPresent
@@ -271,11 +337,11 @@ func verifyEcdaaKeyId(statement *metadata.MetadataStatement, pcc *ParsedCredenti
 }
 
 func metadataHasAttestation(metadataStatement *metadata.MetadataStatement, attestationType metadata.AuthenticatorAttestationType) bool {
-	for _, at := range metadataStatement.AttestationTypes {
-		if metadata.AuthenticatorAttestationType(at) == attestationType {
-			return true
-		}
-	}
+	// for _, at := range metadataStatement.AttestationTypes {
+	// 	if metadata.AuthenticatorAttestationTypeMap(at) == attestationType {
+	// 		return true
+	// 	}
+	// }
 	return false
 }
 
@@ -289,10 +355,10 @@ func GetMetadataStatement(pcc *ParsedCredentialCreationData, metadataService met
 		if err != nil {
 			return nil
 		}
-		metadataStatement := metadataService.U2FAuthenticator(attestationCertificateKeyIdentifier)
+		metadataStatement := metadataService.GetU2FAuthenticator(attestationCertificateKeyIdentifier)
 		return metadataStatement
 	} else {
-		metadataStatement := metadataService.WebAuthnAuthenticator(aaguid.String())
+		metadataStatement := metadataService.GetWebAuthnAuthenticator(aaguid.String())
 		return metadataStatement
 	}
 }
@@ -374,7 +440,7 @@ func VerifyX509CertificateChainAgainstMetadata(metadataStatement *metadata.Metad
 		return ErrAttestation.WithDetails("Error no attestation certificate found in x5c certificate chain")
 	}
 
-	// TODO: maybe we shouldn't delete the unhandledCriticalExtensions right away, we should perform validation with requirements from https://www.w3.org/TR/webauthn-1/#tpm-cert-requirements
+	// TODO: maybe we shouldn't delete the unhandledCriticalExtensions right away, we should perform validation with requirements from https://www.w3.org/TR/webauthn/#tpm-cert-requirements
 	if len(attCert.UnhandledCriticalExtensions) > 0 {
 		for i, unhandledCriticalExtensions := range attCert.UnhandledCriticalExtensions {
 			if unhandledCriticalExtensions.String() == "2.5.29.17" {

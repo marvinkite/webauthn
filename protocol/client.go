@@ -1,6 +1,7 @@
 package protocol
 
 import (
+"crypto/subtle"
 	"encoding/base64"
 	"fmt"
 	"net/url"
@@ -10,7 +11,7 @@ import (
 // CollectedClientData represents the contextual bindings of both the WebAuthn Relying Party
 // and the client. It is a key-value mapping whose keys are strings. Values can be any type
 // that has a valid encoding in JSON. Its structure is defined by the following Web IDL.
-// https://www.w3.org/TR/webauthn-1/#sec-client-data
+// https://www.w3.org/TR/webauthn/#sec-client-data
 type CollectedClientData struct {
 	// Type the string "webauthn.create" when creating new credentials,
 	// and "webauthn.get" when getting an assertion from an existing credential. The
@@ -57,9 +58,9 @@ func FullyQualifiedOrigin(u *url.URL) string {
 
 // Handles steps 3 through 6 of verfying the registering client data of a
 // new credential and steps 7 through 10 of verifying an authentication assertion
-// See https://www.w3.org/TR/webauthn-1/#registering-a-new-credential
-// and https://www.w3.org/TR/webauthn-1/#verifying-assertion
-func (c *CollectedClientData) Verify(storedChallenge string, ceremony CeremonyType, relyingPartyOrigin string) error {
+// See https://www.w3.org/TR/webauthn/#registering-a-new-credential
+// and https://www.w3.org/TR/webauthn/#verifying-assertion
+func (c *CollectedClientData) Verify(storedChallenge string, ceremony CeremonyType, relyingPartyOrigins []string) error {
 
 	// Registration Step 3. Verify that the value of C.type is webauthn.create.
 
@@ -97,6 +98,11 @@ func (c *CollectedClientData) Verify(storedChallenge string, ceremony CeremonyTy
 		err := ErrVerification.WithDetails("Error validating challenge")
 		return err.WithInfo(fmt.Sprintf("Expected b Value: %#v\nReceived b: %#v\n", storedChallenge, challenge))
 	}
+	// TODO FIX ABOVE
+	if subtle.ConstantTimeCompare([]byte(storedChallenge), []byte(challenge)) != 1 {
+		err := ErrVerification.WithDetails("Error validating challenge")
+		return err.WithInfo(fmt.Sprintf("Expected b Value: %#v\nReceived b: %#v\n", storedChallenge, challenge))
+	}
 
 	// Registration Step 5 & Assertion Step 9. Verify that the value of C.origin matches
 	// the Relying Party's origin.
@@ -105,9 +111,20 @@ func (c *CollectedClientData) Verify(storedChallenge string, ceremony CeremonyTy
 		return ErrParsingData.WithDetails("Error decoding clientData origin as URL")
 	}
 
-	if !strings.EqualFold(FullyQualifiedOrigin(clientDataOrigin), relyingPartyOrigin) {
+	foundOriginMatch := false
+	fullyQualifiedClientDataOrigin := c.Origin
+	if clientDataOrigin.Scheme == "https" || clientDataOrigin.Scheme == "http" {
+		fullyQualifiedClientDataOrigin = FullyQualifiedOrigin(clientDataOrigin)
+	}
+	for _, origin := range relyingPartyOrigins {
+		if strings.EqualFold(fullyQualifiedClientDataOrigin, origin) {
+			foundOriginMatch = true
+		}
+	}
+
+	if !foundOriginMatch {
 		err := ErrVerification.WithDetails("Error validating origin")
-		return err.WithInfo(fmt.Sprintf("Expected Value: %s\n Received: %s\n", relyingPartyOrigin, FullyQualifiedOrigin(clientDataOrigin)))
+		return err.WithInfo(fmt.Sprintf("Expected Value list: %q\n Received: %s\n", relyingPartyOrigins, FullyQualifiedOrigin(clientDataOrigin)))
 	}
 
 	// Registration Step 6 and Assertion Step 10. Verify that the value of C.tokenBinding.status

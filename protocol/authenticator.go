@@ -4,17 +4,21 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"github.com/fxamacker/cbor/v2"
-	"github.com/marvinkite/webauthn/cbor_options"
+
+	"github.com/marvinkite/webauthn/protocol/webauthncbor"
 )
 
-var minAuthDataLength = 37
+const (
+	minAuthDataLength     = 37
+	minAttestedAuthLength = 55
+	maxCredentialIDLength = 1023
+)
 
 // The AuthenticatorResponse. Authenticators respond to Relying Party requests by returning an object derived from the
 // AuthenticatorResponse interface. See §5.2. Authenticator Responses
-// https://www.w3.org/TR/webauthn-1/#iface-authenticatorresponse
+// https://www.w3.org/TR/webauthn/#iface-authenticatorresponse
 type AuthenticatorResponse struct {
-	// From the spec https://www.w3.org/TR/webauthn-1/#dom-authenticatorresponse-clientdatajson
+	// From the spec https://www.w3.org/TR/webauthn/#dom-authenticatorresponse-clientdatajson
 	// This attribute contains a JSON serialization of the client data passed to the authenticator
 	// by the client in its call to either create() or get().
 	ClientDataJSON URLEncodedBase64 `json:"clientDataJSON"`
@@ -50,7 +54,8 @@ type AttestedCredentialData struct {
 	CredentialPublicKey []byte `json:"public_key"`
 }
 
-// AuthenticatorAttachment https://www.w3.org/TR/webauthn-1/#platform-attachment
+// AuthenticatorAttachment https://www.w3.org/TR/webauthn/#platform-attachment
+// AuthenticatorAttachment https://www.w3.org/TR/webauthn/#dom-authenticatorselectioncriteria-authenticatorattachment
 type AuthenticatorAttachment string
 
 const (
@@ -65,6 +70,21 @@ const (
 	CrossPlatform AuthenticatorAttachment = "cross-platform"
 )
 
+// ResidentKeyRequirement https://www.w3.org/TR/webauthn/#dom-authenticatorselectioncriteria-residentkey
+type ResidentKeyRequirement string
+
+const (
+	// ResidentKeyRequirementDiscouraged indicates to the client we do not want a discoverable credential. This is the default.
+	ResidentKeyRequirementDiscouraged ResidentKeyRequirement = "discouraged"
+
+	// ResidentKeyRequirementPreferred indicates to the client we would prefer a discoverable credential.
+	ResidentKeyRequirementPreferred ResidentKeyRequirement = "preferred"
+
+	// ResidentKeyRequirementRequired indicates to the client we require a discoverable credential and that it should
+	// fail if the credential does not support this feature.
+	ResidentKeyRequirementRequired ResidentKeyRequirement = "required"
+)
+
 // AuthenticatorTransport defines the transport of Authenticators.
 // Authenticators may implement various transports for communicating with clients. This enumeration defines
 // hints as to how clients might communicate with a particular authenticator in order to obtain an assertion
@@ -72,7 +92,7 @@ const (
 // how an authenticator may be reached. A Relying Party may obtain a list of transports hints from some
 // attestation statement formats or via some out-of-band mechanism; it is outside the scope of this
 // specification to define that mechanism.
-// See §5.10.4. Authenticator Transport https://www.w3.org/TR/webauthn-1/#transport
+// See §5.10.4. Authenticator Transport https://www.w3.org/TR/webauthn/#transport
 type AuthenticatorTransport string
 
 const (
@@ -84,12 +104,14 @@ const (
 	BLE AuthenticatorTransport = "ble"
 	// Internal the client should use an internal source like a TPM or SE
 	Internal AuthenticatorTransport = "internal"
+	// Hybrid indicates the respective authenticator can be contacted using a combination of (often separate) data-transport and proximity mechanisms. This supports, for example, authentication on a desktop computer using a smartphone.
+	Hybrid AuthenticatorTransport = "hybrid"
 )
 
 // UserVerificationRequirement represents the UserVerfication string.
 // A WebAuthn Relying Party may require user verification for some of its operations but not for others,
 // and may use this type to express its needs.
-// See §5.10.6. User Verification Requirement Enumeration https://www.w3.org/TR/webauthn-1/#userVerificationRequirement
+// See §5.10.6. User Verification Requirement Enumeration https://www.w3.org/TR/webauthn/#userVerificationRequirement
 type UserVerificationRequirement string
 
 const (
@@ -115,9 +137,11 @@ const (
 	// FlagUserVerified Bit 00000100 in the byte sequence. Tells us if user is verified
 	// by the authenticator using a biometric or PIN
 	FlagUserVerified // Referred to as UV
-	_                // Reserved
-	_                // Reserved
-	_                // Reserved
+	// FlagBackupEligible Bit 00001000 in the byte sequence. Tells us if a backup is eligible for device
+	FlagBackupEligible // Referred to as BE
+	// FlagBackupState Bit 00010000 in the byte sequence. Tells us if a backup state for device
+	FlagBackupState // Referred to as BS
+	_               // Reserved
 	// FlagAttestedCredentialData Bit 01000000 in the byte sequence. Indicates whether
 	// the authenticator added attested credential data.
 	FlagAttestedCredentialData // Referred to as AT
@@ -145,15 +169,25 @@ func (flag AuthenticatorFlags) HasExtensions() bool {
 	return (flag & FlagHasExtensions) == FlagHasExtensions
 }
 
+// HasBackupEligible returns if the BE flag was set
+func (flag AuthenticatorFlags) HasBackupEligible() bool {
+	return (flag & FlagBackupEligible) == FlagBackupEligible
+}
+
+// HasBackupState returns if the BS flag was set
+func (flag AuthenticatorFlags) HasBackupState() bool {
+	return (flag & FlagBackupState) == FlagBackupState
+}
+
 // Unmarshal will take the raw Authenticator Data and marshalls it into AuthenticatorData for further validation.
 // The authenticator data has a compact but extensible encoding. This is desired since authenticators can be
 // devices with limited capabilities and low power requirements, with much simpler software stacks than the client platform.
 // The authenticator data structure is a byte array of 37 bytes or more, and is laid out in this table:
-// https://www.w3.org/TR/webauthn-1/#table-authData
+// https://www.w3.org/TR/webauthn/#table-authData
 func (a *AuthenticatorData) Unmarshal(rawAuthData []byte) error {
 	if minAuthDataLength > len(rawAuthData) {
 		err := ErrBadRequest.WithDetails("Authenticator data length too short")
-		info := fmt.Sprintf("Expected data greater than %d bytes. Got %d bytes\n", minAuthDataLength, len(rawAuthData))
+		info := fmt.Sprintf("Expected data greater than %d bytes. Got %d bytes", minAuthDataLength, len(rawAuthData))
 		return err.WithInfo(info)
 	}
 
@@ -164,7 +198,7 @@ func (a *AuthenticatorData) Unmarshal(rawAuthData []byte) error {
 	remaining := len(rawAuthData) - minAuthDataLength
 
 	if a.Flags.HasAttestedCredentialData() {
-		if len(rawAuthData) > minAuthDataLength {
+		if len(rawAuthData) > minAttestedAuthLength {
 			err := a.unmarshalAttestedData(rawAuthData)
 			if err != nil {
 				return err
@@ -210,17 +244,36 @@ func (a *AuthenticatorData) unmarshalAttestedData(rawAuthData []byte) error {
 	if rawAuthDataLen < int(55+idLength) {
 		return ErrBadRequest.WithDetails("Attested credential flag set but data is missing")
 	}
+
+	if idLength > maxCredentialIDLength {
+		return ErrBadRequest.WithDetails("Authenticator attestation data credential id length too long")
+	}
+
 	a.AttData.CredentialID = rawAuthData[55 : 55+idLength]
-	a.AttData.CredentialPublicKey = unmarshalCredentialPublicKey(rawAuthData[55+idLength:])
+	var err error
+	a.AttData.CredentialPublicKey, err = unmarshalCredentialPublicKey(rawAuthData[55+idLength:])
+	if err != nil {
+		return ErrBadRequest.WithDetails(fmt.Sprintf("Could not unmarshal Credential Public Key: %v", err))
+	}
+
 	return nil
 }
 
 // Unmarshall the credential's Public Key into CBOR encoding
-func unmarshalCredentialPublicKey(keyBytes []byte) []byte {
+func unmarshalCredentialPublicKey(keyBytes []byte) ([]byte, error) {
 	var m interface{}
-	cbor_options.CborDecMode.Unmarshal(keyBytes, &m)
-	rawBytes, _ := cbor.Marshal(m)
-	return rawBytes
+
+	err := webauthncbor.Unmarshal(keyBytes, &m)
+	if err != nil {
+		return nil, err
+	}
+
+	rawBytes, err := webauthncbor.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+
+	return rawBytes, nil
 }
 
 // ResidentKeyRequired - Require that the key be private key resident to the client device
@@ -229,20 +282,20 @@ func ResidentKeyRequired() *bool {
 	return &required
 }
 
-// ResidentKeyUnrequired - Do not require that the private key be resident to the client device.
-func ResidentKeyUnrequired() *bool {
+// ResidentKeyNotRequired - Do not require that the private key be resident to the client device.
+func ResidentKeyNotRequired() *bool {
 	required := false
 	return &required
 }
 
 // Verify on AuthenticatorData handles Steps 9 through 12 for Registration
 // and Steps 11 through 14 for Assertion.
-func (a *AuthenticatorData) Verify(rpIdHash []byte, userVerificationRequired bool) error {
+func (a *AuthenticatorData) Verify(rpIdHash []byte, appIDHash []byte, userVerificationRequired bool) error {
 
 	// Registration Step 9 & Assertion Step 11
 	// Verify that the RP ID hash in authData is indeed the SHA-256
 	// hash of the RP ID expected by the RP.
-	if !bytes.Equal(a.RPIDHash[:], rpIdHash) {
+	if !bytes.Equal(a.RPIDHash[:], rpIdHash) && !bytes.Equal(a.RPIDHash[:], appIDHash) {
 		return ErrVerification.WithInfo(fmt.Sprintf("RP Hash mismatch. Expected %+s and Received %+s\n", a.RPIDHash, rpIdHash))
 	}
 

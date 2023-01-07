@@ -1,8 +1,8 @@
 package webauthn
 
 import (
+	"bytes"
 	"encoding/base64"
-	"github.com/marvinkite/webauthn/credential"
 	"net/http"
 
 	"github.com/marvinkite/webauthn/protocol"
@@ -15,7 +15,7 @@ import (
 
 type RegistrationOption func(*protocol.PublicKeyCredentialCreationOptions)
 
-// BeginRegistration generate a new set of registration data to be sent to the client and authenticator.
+// BeginRegistration generates a new set of registration data to be sent to the client and authenticator.
 func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOption) (*protocol.CredentialCreation, *SessionData, error) {
 	challenge, err := protocol.CreateChallenge()
 	if err != nil {
@@ -116,22 +116,73 @@ func WithRegistrationTimeout(timeout int) RegistrationOption {
 	}
 }
 
-// FinishRegistration take the response from the authenticator and client and verify the credential against the user's credentials and
+// FinishRegistrationOLD take the response from the authenticator and client and verify the credential against the user's credentials and
 // session data.
-func (webauthn *WebAuthn) FinishRegistration(session SessionData, response *http.Request) (*credential.Credential, error) {
+func (webauthn *WebAuthn) FinishRegistrationOLD(user User, session SessionData, response *http.Request) (*Credential, error) {
 	parsedResponse, err := protocol.ParseCredentialCreationResponse(response)
 	if err != nil {
 		return nil, err
 	}
 
-	return webauthn.CreateCredential(session, parsedResponse)
+	return webauthn.CreateCredential(user, session, parsedResponse)
+}
+
+// Provide credential parameters to registration options
+func WithCredentialParameters(credentialParams []protocol.CredentialParameter) RegistrationOption {
+	return func(cco *protocol.PublicKeyCredentialCreationOptions) {
+		cco.Parameters = credentialParams
+	}
+}
+
+// WithAppIdExcludeExtension automatically includes the specified appid if the CredentialExcludeList contains a credential
+// with the type `fido-u2f`.
+func WithAppIdExcludeExtension(appid string) RegistrationOption {
+	return func(cco *protocol.PublicKeyCredentialCreationOptions) {
+		for _, credential := range cco.CredentialExcludeList {
+			if credential.AttestationType == protocol.CredentialTypeFIDOU2F {
+				if cco.Extensions == nil {
+					cco.Extensions = map[string]interface{}{}
+				}
+
+				cco.Extensions[protocol.ExtensionAppIDExclude] = appid
+			}
+		}
+	}
+}
+
+// WithResidentKeyRequirement sets both the resident key and require resident key protocol options. When
+func WithResidentKeyRequirement(requirement protocol.ResidentKeyRequirement) RegistrationOption {
+	return func(cco *protocol.PublicKeyCredentialCreationOptions) {
+		cco.AuthenticatorSelection.ResidentKey = requirement
+		switch requirement {
+		case protocol.ResidentKeyRequirementRequired:
+			cco.AuthenticatorSelection.RequireResidentKey = protocol.ResidentKeyRequired()
+		default:
+			cco.AuthenticatorSelection.RequireResidentKey = protocol.ResidentKeyNotRequired()
+		}
+	}
+}
+
+// FinishRegistration take the response from the authenticator and client and verify the credential against the user's credentials and
+// session data.
+func (webauthn *WebAuthn) FinishRegistration(user User, session SessionData, response *http.Request) (*Credential, error) {
+	parsedResponse, err := protocol.ParseCredentialCreationResponse(response)
+	if err != nil {
+		return nil, err
+	}
+
+	return webauthn.CreateCredential(user, session, parsedResponse)
 }
 
 // CreateCredential verifies a parsed response against the user's credentials and session data.
-func (webauthn *WebAuthn) CreateCredential(session SessionData, parsedResponse *protocol.ParsedCredentialCreationData) (*credential.Credential, error) {
+func (webauthn *WebAuthn) CreateCredential(user User, session SessionData, parsedResponse *protocol.ParsedCredentialCreationData) (*Credential, error) {
+	if !bytes.Equal(user.WebAuthnID(), session.UserID) {
+		return nil, protocol.ErrBadRequest.WithDetails("ID mismatch for User and Session")
+	}
+
 	shouldVerifyUser := session.UserVerification == protocol.VerificationRequired
 
-	invalidErr := parsedResponse.Verify(session.Challenge, shouldVerifyUser, webauthn.Config.RPID, webauthn.Config.RPOrigin, webauthn.MetadataService, webauthn.CredentialService, webauthn.RpPolicy)
+	invalidErr := parsedResponse.Verify(session.Challenge, shouldVerifyUser, webauthn.Config.RPID, webauthn.Config.RPOrigins, webauthn.MetadataService, webauthn.CredentialService, webauthn.RpPolicy)
 	if invalidErr != nil {
 		return nil, invalidErr
 	}

@@ -1,6 +1,6 @@
 package protocol
 
-// From §5.4.1 (https://www.w3.org/TR/webauthn-1/#dictionary-pkcredentialentity).
+// From §5.4.1 (https://www.w3.org/TR/webauthn/#dictionary-pkcredentialentity).
 // PublicKeyCredentialEntity describes a user account, or a WebAuthn Relying Party,
 // with which a public key credential is associated.
 type CredentialEntity struct {
@@ -22,7 +22,7 @@ type CredentialEntity struct {
 	Icon string `json:"icon,omitempty"`
 }
 
-// From §5.4.2 (https://www.w3.org/TR/webauthn-1/#sctn-rp-credential-params).
+// From §5.4.2 (https://www.w3.org/TR/webauthn/#sctn-rp-credential-params).
 // The PublicKeyCredentialRpEntity is used to supply additional
 // Relying Party attributes when creating a new credential.
 type RelyingPartyEntity struct {
@@ -31,7 +31,7 @@ type RelyingPartyEntity struct {
 	ID string `json:"id"`
 }
 
-// From §5.4.3 (https://www.w3.org/TR/webauthn-1/#sctn-user-credential-params).
+// From §5.4.3 (https://www.w3.org/TR/webauthn/#sctn-user-credential-params).
 // The PublicKeyCredentialUserEntity is used to supply additional
 // user account attributes when creating a new credential.
 type UserEntity struct {
@@ -43,6 +43,6 @@ type UserEntity struct {
 	// ID is the user handle of the user account entity. To ensure secure operation,
 	// authentication and authorization decisions MUST be made on the basis of this id
 	// member, not the displayName nor name members. See Section 6.1 of
-	// [RFC8266](https://www.w3.org/TR/webauthn-1/#biblio-rfc8266).
+	// [RFC8266](https://www.w3.org/TR/webauthn/#biblio-rfc8266).
 	ID URLEncodedBase64 `json:"id"`
 }

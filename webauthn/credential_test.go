@@ -1,7 +1,6 @@
 package webauthn
 
 import (
-	"github.com/marvinkite/webauthn/credential"
 	"reflect"
 	"testing"
 
@@ -15,7 +14,7 @@ func TestMakeNewCredential(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *credential.Credential
+		want    *Credential
 		wantErr bool
 	}{
 		// TODO: Add test cases.

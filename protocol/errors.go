@@ -12,7 +12,7 @@ type Error struct {
 var (
 	ErrBadRequest = &Error{
 		Type:    "invalid_request",
-		Details: "Error reading the requst data",
+		Details: "Error reading the request data",
 	}
 	ErrChallengeMismatch = &Error{
 		Type:    "challenge_mismatch",
@@ -88,18 +88,18 @@ var (
 	}
 )
 
-func (err *Error) Error() string {
-	return err.Details
+func (e *Error) Error() string {
+	return e.Details
 }
 
-func (passedError *Error) WithDetails(details string) *Error {
-	err := *passedError
+func (e *Error) WithDetails(details string) *Error {
+	err := *e
 	err.Details = details
 	return &err
 }
 
-func (passedError *Error) WithInfo(info string) *Error {
-	err := *passedError
+func (e *Error) WithInfo(info string) *Error {
+	err := *e
 	err.DevInfo = info
 	return &err
 }

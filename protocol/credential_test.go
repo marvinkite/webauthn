@@ -3,19 +3,20 @@ package protocol
 import (
 	"bytes"
 	"encoding/base64"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"reflect"
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/marvinkite/webauthn/cbor_options"
 	"github.com/marvinkite/webauthn/credential"
 	"github.com/marvinkite/webauthn/metadata"
+	"github.com/marvinkite/webauthn/protocol/webauthncbor"
 )
 
 func TestParseCredentialCreationResponse(t *testing.T) {
-	reqBody := ioutil.NopCloser(bytes.NewReader([]byte(testCredentialRequestBody)))
+	reqBody := io.NopCloser(bytes.NewReader([]byte(testCredentialRequestBody)))
 	httpReq := &http.Request{Body: reqBody}
 
 	reqBodyNoAttestation := ioutil.NopCloser(bytes.NewReader([]byte(testCredentialNoAttestationDataRequestBody)))
@@ -49,7 +50,11 @@ func TestParseCredentialCreationResponse(t *testing.T) {
 						Type: "public-key",
 					},
 					RawID: byteID,
+					ClientExtensionResults: AuthenticationExtensionsClientOutputs{
+						"appid": true,
+					},
 				},
+				Transports: []AuthenticatorTransport{USB, NFC, "fake"},
 				Response: ParsedAttestationResponse{
 					CollectedClientData: CollectedClientData{
 						Type:      CeremonyType("webauthn.create"),
@@ -78,6 +83,9 @@ func TestParseCredentialCreationResponse(t *testing.T) {
 							ID:   "6xrtBhJQW6QU4tOaB4rrHaS2Ks0yDDL_q8jDC16DEjZ-VLVf4kCRkvl2xp2D71sTPYns-exsHQHTy3G-zJRK8g",
 						},
 						RawID: byteID,
+						ClientExtensionResults: AuthenticationExtensionsClientOutputs{
+							"appid": true,
+						},
 					},
 					AttestationResponse: AuthenticatorAttestationResponse{
 						AuthenticatorResponse: AuthenticatorResponse{
@@ -85,6 +93,7 @@ func TestParseCredentialCreationResponse(t *testing.T) {
 						},
 						AttestationObject: byteAttObject,
 					},
+					Transports: []string{"usb", "nfc", "fake"},
 				},
 			},
 			wantErr: false,
@@ -105,6 +114,12 @@ func TestParseCredentialCreationResponse(t *testing.T) {
 				return
 			}
 			if tt.want != nil {
+				if !reflect.DeepEqual(got.ClientExtensionResults, tt.want.ClientExtensionResults) {
+					t.Errorf("Extensions = %v \n want: %v", got.ClientExtensionResults, tt.want.ClientExtensionResults)
+				}
+				if !reflect.DeepEqual(got.Transports, tt.want.Transports) {
+					t.Errorf("Transports = %v \n want: %v", got.Transports, tt.want.Transports)
+				}
 				if !reflect.DeepEqual(got.Extensions, tt.want.Extensions) {
 					t.Errorf("Extensions = %v \n want: %v", got, tt.want)
 				}
@@ -126,10 +141,10 @@ func TestParseCredentialCreationResponse(t *testing.T) {
 				// Unmarshall CredentialPublicKey
 				var pkWant interface{}
 				keyBytesWant := tt.want.Response.AttestationObject.AuthData.AttData.CredentialPublicKey
-				cbor_options.CborDecMode.Unmarshal(keyBytesWant, &pkWant)
+				webauthncbor.Unmarshal(keyBytesWant, &pkWant)
 				var pkGot interface{}
 				keyBytesGot := got.Response.AttestationObject.AuthData.AttData.CredentialPublicKey
-				cbor_options.CborDecMode.Unmarshal(keyBytesGot, &pkGot)
+				webauthncbor.Unmarshal(keyBytesGot, &pkGot)
 				if !reflect.DeepEqual(pkGot, pkWant) {
 					t.Errorf("Response = %+v \n want: %+v", pkGot, pkWant)
 				}
@@ -168,7 +183,7 @@ func TestParsedCredentialCreationData_Verify(t *testing.T) {
 		storedChallenge    Challenge
 		verifyUser         bool
 		relyingPartyID     string
-		relyingPartyOrigin string
+		relyingPartyOrigin []string
 		credentialStore    credential.CredentialService
 	}
 	tests := []struct {
@@ -228,8 +243,7 @@ func TestParsedCredentialCreationData_Verify(t *testing.T) {
 				storedChallenge:    byteChallenge,
 				verifyUser:         false,
 				relyingPartyID:     `webauthn.io`,
-				relyingPartyOrigin: `https://webauthn.io`,
-				credentialStore:    nil,
+				relyingPartyOrigin: []string{`https://webauthn.io`},
 			},
 			wantErr: false,
 		},
@@ -284,7 +298,7 @@ func TestParsedCredentialCreationData_Verify(t *testing.T) {
 				storedChallenge:    byteChallenge,
 				verifyUser:         false,
 				relyingPartyID:     `webauthn.io`,
-				relyingPartyOrigin: `https://webauthn.io`,
+				relyingPartyOrigin: []string{`https://webauthn.io`},
 				credentialStore:    &testCredentialStore{},
 			},
 			wantErr: true,
@@ -340,8 +354,7 @@ func TestParsedCredentialCreationData_Verify(t *testing.T) {
 				storedChallenge:    byteChallenge,
 				verifyUser:         false,
 				relyingPartyID:     `webauthn.io`,
-				relyingPartyOrigin: `https://webauthn.io`,
-				credentialStore:    &testCredentialStore{},
+				relyingPartyOrigin: []string{`https://webauthn.io`},
 			},
 			wantErr: false,
 		},
@@ -398,7 +411,7 @@ func TestParsedCredentialCreationData_Verify_With_Metadata(t *testing.T) {
 		storedChallenge    Challenge
 		verifyUser         bool
 		relyingPartyID     string
-		relyingPartyOrigin string
+		relyingPartyOrigin []string
 		metadataService    metadata.MetadataService
 	}
 	tests := []struct {
@@ -459,7 +472,7 @@ func TestParsedCredentialCreationData_Verify_With_Metadata(t *testing.T) {
 				storedChallenge:    byteChallenge,
 				verifyUser:         true,
 				relyingPartyID:     "webauthn.io",
-				relyingPartyOrigin: "https://webauthn.io",
+				relyingPartyOrigin: []string{"https://webauthn.io"},
 				metadataService:    defaultMetadataService,
 			},
 		},
@@ -515,7 +528,7 @@ func TestParsedCredentialCreationData_Verify_With_Metadata(t *testing.T) {
 				storedChallenge:    byteChallenge,
 				verifyUser:         true,
 				relyingPartyID:     "webauthn.io",
-				relyingPartyOrigin: "https://webauthn.io",
+				relyingPartyOrigin: []string{"https://webauthn.io"},
 				metadataService:    defaultMetadataService,
 			},
 			wantErr: true,
@@ -572,7 +585,7 @@ func TestParsedCredentialCreationData_Verify_With_Metadata(t *testing.T) {
 				storedChallenge:    byteChallenge,
 				verifyUser:         true,
 				relyingPartyID:     "webauthn.io",
-				relyingPartyOrigin: "https://webauthn.io",
+				relyingPartyOrigin: []string{"https://webauthn.io"},
 				metadataService:    defaultMetadataService,
 			},
 			wantErr: true,
@@ -629,7 +642,7 @@ func TestParsedCredentialCreationData_Verify_With_Metadata(t *testing.T) {
 				storedChallenge:    byteChallenge,
 				verifyUser:         true,
 				relyingPartyID:     "webauthn.io",
-				relyingPartyOrigin: "https://webauthn.io",
+				relyingPartyOrigin: []string{"https://webauthn.io"},
 				metadataService:    defaultMetadataService,
 			},
 			wantErr: true,
@@ -653,6 +666,10 @@ var testCredentialRequestBody = `{
 	"id":"6xrtBhJQW6QU4tOaB4rrHaS2Ks0yDDL_q8jDC16DEjZ-VLVf4kCRkvl2xp2D71sTPYns-exsHQHTy3G-zJRK8g",
 	"rawId":"6xrtBhJQW6QU4tOaB4rrHaS2Ks0yDDL_q8jDC16DEjZ-VLVf4kCRkvl2xp2D71sTPYns-exsHQHTy3G-zJRK8g",
 	"type":"public-key",
+	"transports":["usb","nfc","fake"],
+	"clientExtensionResults":{
+		"appid":true
+	},
 	"response":{
 		"attestationObject":"o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVjEdKbqkhPJnC90siSSsyDPQCYqlMGpUKA5fyklC2CEHvBBAAAAAAAAAAAAAAAAAAAAAAAAAAAAQOsa7QYSUFukFOLTmgeK6x2ktirNMgwy_6vIwwtegxI2flS1X-JAkZL5dsadg-9bEz2J7PnsbB0B08txvsyUSvKlAQIDJiABIVggLKF5xS0_BntttUIrm2Z2tgZ4uQDwllbdIfrrBMABCNciWCDHwin8Zdkr56iSIh0MrB5qZiEzYLQpEOREhMUkY6q4Vw",
 		"clientDataJSON":"eyJjaGFsbGVuZ2UiOiJXOEd6RlU4cEdqaG9SYldyTERsYW1BZnFfeTRTMUNaRzFWdW9lUkxBUnJFIiwib3JpZ2luIjoiaHR0cHM6Ly93ZWJhdXRobi5pbyIsInR5cGUiOiJ3ZWJhdXRobi5jcmVhdGUifQ"
@@ -737,7 +754,7 @@ var defaultMetadataService = &TestMetadataService{}
 type TestMetadataService struct {
 }
 
-func (metadataService *TestMetadataService) WebAuthnAuthenticator(aaguid string) *metadata.MetadataStatement {
+func (metadataService *TestMetadataService) GetWebAuthnAuthenticator(aaguid string) *metadata.MetadataStatement {
 	if aaguid == "fa2b99dc-9e39-4257-8f92-4a30d23c4118" {
 		return metadataStatement
 	} else {
@@ -745,7 +762,7 @@ func (metadataService *TestMetadataService) WebAuthnAuthenticator(aaguid string)
 	}
 }
 
-func (metadataService *TestMetadataService) U2FAuthenticator(attestationCertificateKeyIdentifier string) *metadata.MetadataStatement {
+func (metadataService *TestMetadataService) GetU2FAuthenticator(attestationCertificateKeyIdentifier string) *metadata.MetadataStatement {
 	return nil
 }
 
@@ -759,22 +776,17 @@ var metadataStatement = &metadata.MetadataStatement{
 	AuthenticatorVersion:                 50100,
 	ProtocolFamily:                       "fido2",
 	Upv:                                  nil,
-	AssertionScheme:                      "FIDOV2",
-	AuthenticationAlgorithm:              1,
-	AuthenticationAlgorithms:             []uint16{1, 18},
-	PublicKeyAlgAndEncoding:              260,
-	PublicKeyAlgAndEncodings:             nil,
-	AttestationTypes:                     []uint16{15879},
+	AuthenticationAlgorithms:             []metadata.AuthenticationAlgorithm{"secp256r1_ecdsa_sha256_raw", "ed25519_eddsa_sha512_raw"},
+	PublicKeyAlgAndEncodings:             []metadata.PublicKeyAlgAndEncoding{metadata.ALG_KEY_COSE},
+	AttestationTypes:                     []metadata.AuthenticatorAttestationType{metadata.BasicFull},
 	UserVerificationDetails:              nil,
-	KeyProtection:                        10,
+	KeyProtection:                        []string{"software", "tee"},
 	IsKeyRestricted:                      false,
 	IsFreshUserVerificationRequired:      false,
-	MatcherProtection:                    4,
+	MatcherProtection:                    []string{"on_chip"},
 	CryptoStrength:                       128,
-	OperatingEnv:                         "Secure Element (SE)",
-	AttachmentHint:                       30,
-	IsSecondFactorOnly:                   false,
-	TcDisplay:                            0,
+	AttachmentHint:                       []string{"external", "wired", "wireless", "nfc"},
+	TcDisplay:                            []string{},
 	TcDisplayContentType:                 "",
 	TcDisplayPNGCharacteristics:          nil,
 	AttestationRootCertificates:          []string{"MIIDHjCCAgagAwIBAgIEG0BT9zANBgkqhkiG9w0BAQsFADAuMSwwKgYDVQQDEyNZdWJpY28gVTJGIFJvb3QgQ0EgU2VyaWFsIDQ1NzIwMDYzMTAgFw0xNDA4MDEwMDAwMDBaGA8yMDUwMDkwNDAwMDAwMFowLjEsMCoGA1UEAxMjWXViaWNvIFUyRiBSb290IENBIFNlcmlhbCA0NTcyMDA2MzEwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC/jwYuhBVlqaiYWEMsrWFisgJ+PtM91eSrpI4TK7U53mwCIawSDHy8vUmk5N2KAj9abvT9NP5SMS1hQi3usxoYGonXQgfO6ZXyUA9a+KAkqdFnBnlyugSeCOep8EdZFfsaRFtMjkwz5Gcz2Py4vIYvCdMHPtwaz0bVuzneueIEz6TnQjE63Rdt2zbwnebwTG5ZybeWSwbzy+BJ34ZHcUhPAY89yJQXuE0IzMZFcEBbPNRbWECRKgjq//qT9nmDOFVlSRCt2wiqPSzluwn+v+suQEBsUjTGMEd25tKXXTkNW21wIWbxeSyUoTXwLvGS6xlwQSgNpk2qXYwf8iXg7VWZAgMBAAGjQjBAMB0GA1UdDgQWBBQgIvz0bNGJhjgpToksyKpP9xv9oDAPBgNVHRMECDAGAQH/AgEAMA4GA1UdDwEB/wQEAwIBBjANBgkqhkiG9w0BAQsFAAOCAQEAjvjuOMDSa+JXFCLyBKsycXtBVZsJ4Ue3LbaEsPY4MYN/hIQ5ZM5p7EjfcnMG4CtYkNsfNHc0AhBLdq45rnT87q/6O3vUEtNMafbhU6kthX7Y+9XFN9NpmYxr+ekVY5xOxi8h9JDIgoMP4VB1uS0aunL1IGqrNooL9mmFnL2kLVVee6/VR6C5+KSTCMCWppMuJIZII2v9o4dkoZ8Y7QRjQlLfYzd3qGtKbw7xaF1UsG/5xUb/Btwb2X2g4InpiB/yt/3CpQXpiWX/K4mBvUKiGn05ZsqeY1gx4g0xLBqcU9psmyPzK+Vsgw2jeRQ5JlKDyqE0hebfC1tvFu0CCrJFcw=="}, // TODO
@@ -784,14 +796,6 @@ var metadataStatement = &metadata.MetadataStatement{
 }
 
 type testCredentialStore struct {
-}
-
-func (store *testCredentialStore) GetCredential(credentialId []byte) (*credential.Credential, []byte, error) {
-	return nil, nil, nil
-}
-
-func (store *testCredentialStore) GetCredentialForUser(userId []byte) ([]credential.Credential, error) {
-	return nil, nil
 }
 
 func (store *testCredentialStore) ExistsCredential(credentialId []byte) (bool, error) {

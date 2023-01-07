@@ -2,13 +2,17 @@ package protocol
 
 import (
 	"crypto/sha256"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"github.com/marvinkite/webauthn/cbor_options"
+
+	"github.com/google/uuid"
+	"github.com/marvinkite/webauthn/metadata"
+	"github.com/marvinkite/webauthn/protocol/webauthncbor"
 	"github.com/marvinkite/webauthn/protocol/webauthncose"
 )
 
-// From §5.2.1 (https://www.w3.org/TR/webauthn-1/#authenticatorattestationresponse)
+// From §5.2.1 (https://www.w3.org/TR/webauthn/#authenticatorattestationresponse)
 // "The authenticator's response to a client’s request for the creation
 // of a new public key credential. It contains information about the new credential
 // that can be used to identify it for later use, and metadata that can be used by
@@ -51,8 +55,7 @@ type ParsedAttestationResponse struct {
 // a trust decision. However, if an attestation key pair is not available, then the authenticator MUST
 // perform self attestation of the credential public key with the corresponding credential private key.
 // All this information is returned by authenticators any time a new public key credential is generated, in
-// the overall form of an attestation object. (https://www.w3.org/TR/webauthn-1/#attestation-object)
-//
+// the overall form of an attestation object. (https://www.w3.org/TR/webauthn/#attestation-object)
 type AttestationObject struct {
 	// The authenticator data, including the newly created public key. See AuthenticatorData for more info
 	AuthData AuthenticatorData
@@ -85,7 +88,7 @@ func (ccr *AuthenticatorAttestationResponse) Parse() (*ParsedAttestationResponse
 		return nil, ErrParsingData.WithInfo(err.Error())
 	}
 
-	err = cbor_options.CborDecMode.Unmarshal(ccr.AttestationObject, &p.AttestationObject)
+	err = webauthncbor.Unmarshal(ccr.AttestationObject, &p.AttestationObject)
 	if err != nil {
 		return nil, ErrParsingData.WithInfo(err.Error())
 	}
@@ -115,7 +118,7 @@ func (attestationObject *AttestationObject) Verify(relyingPartyID string, client
 	// the SHA-256 hash of the RP ID expected by the RP.
 	rpIDHash := sha256.Sum256([]byte(relyingPartyID))
 	// Handle Steps 9 through 12
-	authDataVerificationError := attestationObject.AuthData.Verify(rpIDHash[:], verificationRequired)
+	authDataVerificationError := attestationObject.AuthData.Verify(rpIDHash[:], nil, verificationRequired)
 	if authDataVerificationError != nil {
 		return authDataVerificationError
 	}
@@ -125,7 +128,7 @@ func (attestationObject *AttestationObject) Verify(relyingPartyID string, client
 	// WebAuthn Attestation Statement Format Identifier values. The up-to-date
 	// list of registered WebAuthn Attestation Statement Format Identifier
 	// values is maintained in the IANA registry of the same name
-	// [WebAuthn-Registries] (https://www.w3.org/TR/webauthn-1/#biblio-webauthn-registries).
+	// [WebAuthn-Registries] (https://www.w3.org/TR/webauthn/#biblio-webauthn-registries).
 
 	// Since there is not an active registry yet, we'll check it against our internal
 	// Supported types.
@@ -147,7 +150,7 @@ func (attestationObject *AttestationObject) Verify(relyingPartyID string, client
 	// Step 14. Verify that attStmt is a correct attestation statement, conveying a valid attestation signature, by using
 	// the attestation statement format fmt’s verification procedure given attStmt, authData and the hash of the serialized
 	// client data computed in step 7.
-	attestationType, _, err := formatHandler(*attestationObject, clientDataHash)
+	attestationType, x5c, err := formatHandler(*attestationObject, clientDataHash)
 	if err != nil {
 		switch err.(type) {
 		case *Error:
@@ -156,6 +159,40 @@ func (attestationObject *AttestationObject) Verify(relyingPartyID string, client
 			return err
 		default:
 			return ErrAttestation.WithInfo(err.Error())
+		}
+	}
+
+	uuid, err := uuid.FromBytes(attestationObject.AuthData.AttData.AAGUID)
+	if err != nil {
+		return err
+	}
+	if meta, ok := metadata.Metadata[uuid]; ok {
+		for _, s := range meta.StatusReports {
+			if metadata.IsUndesiredAuthenticatorStatus(s.Status) {
+				return ErrInvalidAttestation.WithDetails("Authenticator with undesirable status encountered")
+			}
+		}
+
+		if x5c != nil {
+			attestnCert, err := x509.ParseCertificate(x5c[0].([]byte))
+			if err != nil {
+				return ErrInvalidAttestation.WithDetails("Unable to parse attestation certificate from x5c")
+			}
+			if attestnCert.Subject.CommonName != attestnCert.Issuer.CommonName {
+				var hasBasicFull = false
+				for _, a := range meta.MetadataStatement.AttestationTypes {
+					if metadata.AuthenticatorAttestationType(a) == metadata.BasicFull {
+						hasBasicFull = true
+					}
+				}
+				if !hasBasicFull {
+					return ErrInvalidAttestation.WithDetails("Attestation with full attestation from authentictor that does not support full attestation")
+				}
+			}
+		}
+	} else {
+		if metadata.Conformance {
+			return ErrInvalidAttestation.WithDetails(fmt.Sprintf("AAGUID %s not found in metadata during conformance testing", uuid.String()))
 		}
 	}
 

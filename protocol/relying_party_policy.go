@@ -9,10 +9,10 @@ type RelyingPartyPolicy interface {
 	Verify(pcc *ParsedCredentialCreationData, attestationTrustworthinessError error, metadataStatement *metadata.MetadataStatement) error
 }
 
-// This allows to use every FIDO2 authenticator with no restriction
+// AllowAllPolicy allows to use every FIDO2 authenticator with no restriction
 type AllowAllPolicy struct{}
 
-// AllowAllPolicy - always returns no error
+// Verify - always returns no error
 func (aap AllowAllPolicy) Verify(pcc *ParsedCredentialCreationData, attestationTrustworthinessError error, metadataStatement *metadata.MetadataStatement) error {
 	return nil
 }

@@ -2,11 +2,11 @@ package webauthn
 
 import (
 	"fmt"
-	"github.com/marvinkite/webauthn/cbor_options"
-	"github.com/marvinkite/webauthn/credential"
-	"github.com/marvinkite/webauthn/metadata"
+	"log"
 	"net/url"
 
+	"github.com/marvinkite/webauthn/credential"
+	"github.com/marvinkite/webauthn/metadata"
 	"github.com/marvinkite/webauthn/protocol"
 )
 
@@ -30,6 +30,7 @@ type Config struct {
 	RPDisplayName string
 	RPID          string
 	RPOrigin      string
+	RPOrigins     []string
 	RPIcon        string
 	// Defaults for generating options
 	AttestationPreference  protocol.ConveyancePreference
@@ -62,39 +63,56 @@ func (config *Config) validate() error {
 		config.Timeouts.Registration = defaultTimeout
 	}
 
-	if config.RPOrigin == "" {
-		config.RPOrigin = config.RPID
-	} else {
-		u, err := url.Parse(config.RPOrigin)
+	if config.RPOrigin != "" {
+		config.RPOrigins = append(config.RPOrigins, config.RPOrigin)
+	}
+
+	var validOrigins []string
+	for _, origin := range config.RPOrigins {
+		u, err := url.Parse(origin)
 		if err != nil {
-			return fmt.Errorf("RPOrigin not valid URL: %+v", err)
+			log.Println(fmt.Sprintf("Failed to parse Origin: %s, skip it", origin))
+			continue
 		}
-		config.RPOrigin = protocol.FullyQualifiedOrigin(u)
+		if u.Scheme != "https" && u.Scheme != "http" {
+			// we need this case for android (origin is then something like: 'android:apk-key-hash:...')
+			validOrigins = append(validOrigins, origin)
+		} else {
+			validOrigins = append(validOrigins, protocol.FullyQualifiedOrigin(u))
+		}
+	}
+	config.RPOrigins = validOrigins
+
+	if len(config.RPOrigins) == 0 {
+		return fmt.Errorf("missing at least one RPOrigin")
+	}
+
+	if config.AuthenticatorSelection.RequireResidentKey == nil {
+		rrk := false
+		config.AuthenticatorSelection.RequireResidentKey = &rrk
+	}
+
+	if config.AuthenticatorSelection.UserVerification == "" {
+		config.AuthenticatorSelection.UserVerification = protocol.VerificationPreferred
 	}
 
 	return nil
 }
 
 // Create a new WebAuthn object given the proper config flags
-func New(config *Config, metadataService metadata.MetadataService, credentialService credential.CredentialService, rpPolicy protocol.RelyingPartyPolicy) (*WebAuthn, error) {
+func New(config *Config, metadataService metadata.MetadataService, rpPolicy protocol.RelyingPartyPolicy) (*WebAuthn, error) {
 	if err := config.validate(); err != nil {
 		return nil, fmt.Errorf("Configuration error: %+v", err)
-	}
-	if cbor_options.CborDecModeErr != nil {
-		return nil, fmt.Errorf("Initilization error: %+v", cbor_options.CborDecModeErr)
-	}
-	if credentialService == nil {
-		return nil, fmt.Errorf("CredentialService must not be nil")
 	}
 	if err := validateRelyingPartyPolicyRequirements(rpPolicy, metadataService); err != nil {
 		return nil, fmt.Errorf("PolicyRequirements error: %+v", err)
 	}
 
 	return &WebAuthn{
-		Config:            config,
-		MetadataService:   metadataService,
-		CredentialService: credentialService,
-		RpPolicy:          rpPolicy,
+		Config:          config,
+		MetadataService: metadataService,
+		// CredentialService: credentialService,
+		RpPolicy: rpPolicy,
 	}, nil
 }
 

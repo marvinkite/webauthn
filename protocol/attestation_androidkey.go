@@ -6,6 +6,7 @@ import (
 	"encoding/asn1"
 	"fmt"
 
+	"github.com/marvinkite/webauthn/metadata"
 	"github.com/marvinkite/webauthn/protocol/webauthncose"
 )
 
@@ -15,17 +16,20 @@ func init() {
 	RegisterAttestationFormat(androidAttestationKey, verifyAndroidKeyFormat)
 }
 
-// From §8.4. https://www.w3.org/TR/webauthn-1/#android-key-attestation
+// From §8.4. https://www.w3.org/TR/webauthn/#android-key-attestation
 // The android-key attestation statement looks like:
 // $$attStmtType //= (
-// 	fmt: "android-key",
-// 	attStmt: androidStmtFormat
+//
+//	fmt: "android-key",
+//	attStmt: androidStmtFormat
+//
 // )
-// androidStmtFormat = {
-// 		alg: COSEAlgorithmIdentifier,
-// 		sig: bytes,
-// 		x5c: [ credCert: bytes, * (caCert: bytes) ]
-//   }
+//
+//	androidStmtFormat = {
+//			alg: COSEAlgorithmIdentifier,
+//			sig: bytes,
+//			x5c: [ credCert: bytes, * (caCert: bytes) ]
+//	  }
 func verifyAndroidKeyFormat(att AttestationObject, clientDataHash []byte) (string, []interface{}, error) {
 	// Given the verification procedure inputs attStmt, authenticatorData and clientDataHash, the verification procedure is as follows:
 	// §8.4.1. Verify that attStmt is valid CBOR conforming to the syntax defined above and perform CBOR decoding on it to extract
@@ -116,7 +120,7 @@ func verifyAndroidKeyFormat(att AttestationObject, clientDataHash []byte) (strin
 	if !contains(decoded.SoftwareEnforced.Purpose, KM_PURPOSE_SIGN) && !contains(decoded.TeeEnforced.Purpose, KM_PURPOSE_SIGN) {
 		return androidAttestationKey, nil, ErrAttestationFormat.WithDetails("Attestation certificate extensions contains authorization list with purpose not equal KM_PURPOSE_SIGN")
 	}
-	return androidAttestationKey, x5c, err
+	return string(metadata.BasicFull) /*androidAttestationKey*/, x5c, err
 }
 
 func contains(s []int, e int) bool {

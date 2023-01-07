@@ -5,7 +5,9 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/x509"
-	"github.com/marvinkite/webauthn/cbor_options"
+
+	"github.com/marvinkite/webauthn/metadata"
+	"github.com/marvinkite/webauthn/protocol/webauthncbor"
 	"github.com/marvinkite/webauthn/protocol/webauthncose"
 )
 
@@ -15,7 +17,7 @@ func init() {
 	RegisterAttestationFormat(u2fAttestationKey, verifyU2FFormat)
 }
 
-// verifyU2FFormat - Follows verification steps set out by https://www.w3.org/TR/webauthn-1/#fido-u2f-attestation
+// verifyU2FFormat - Follows verification steps set out by https://www.w3.org/TR/webauthn/#fido-u2f-attestation
 func verifyU2FFormat(att AttestationObject, clientDataHash []byte) (string, []interface{}, error) {
 
 	if !bytes.Equal(att.AuthData.AttData.AAGUID, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}) {
@@ -24,7 +26,7 @@ func verifyU2FFormat(att AttestationObject, clientDataHash []byte) (string, []in
 	// Signing procedure step - If the credential public key of the given credential is not of
 	// algorithm -7 ("ES256"), stop and return an error.
 	key := webauthncose.EC2PublicKeyData{}
-	cbor_options.CborDecMode.Unmarshal(att.AuthData.AttData.CredentialPublicKey, &key)
+	webauthncbor.Unmarshal(att.AuthData.AttData.CredentialPublicKey, &key)
 
 	if webauthncose.COSEAlgorithmIdentifier(key.PublicKeyData.Algorithm) != webauthncose.AlgES256 {
 		return u2fAttestationKey, nil, ErrUnsupportedAlgorithm.WithDetails("Non-ES256 Public Key algorithm used")
@@ -46,7 +48,7 @@ func verifyU2FFormat(att AttestationObject, clientDataHash []byte) (string, []in
 	}
 
 	// Check for "sig" which is The attestation signature. The signature was calculated over the (raw) U2F
-	// registration response message https://www.w3.org/TR/webauthn-1/#biblio-fido-u2f-message-formats]
+	// registration response message https://www.w3.org/TR/webauthn/#biblio-fido-u2f-message-formats]
 	// received by the client from the authenticator.
 	signature, present := att.AttStatement["sig"].([]byte)
 	if !present {
@@ -65,8 +67,8 @@ func verifyU2FFormat(att AttestationObject, clientDataHash []byte) (string, []in
 	// Note: Packed Attestation, FIDO U2F Attestation, and Assertion Signatures support ASN.1,but it is recommended
 	// that any new attestation formats defined not use ASN.1 encodings, but instead represent signatures as equivalent
 	// fixed-length byte arrays without internal structure, using the same representations as used by COSE signatures
-	// as defined in RFC8152 (https://www.w3.org/TR/webauthn-1/#biblio-rfc8152)
-	// and RFC8230 (https://www.w3.org/TR/webauthn-1/#biblio-rfc8230).
+	// as defined in RFC8152 (https://www.w3.org/TR/webauthn/#biblio-rfc8152)
+	// and RFC8230 (https://www.w3.org/TR/webauthn/#biblio-rfc8230).
 
 	// Step 2.2
 	asn1Bytes, decoded := x5c[0].([]byte)
@@ -93,9 +95,9 @@ func verifyU2FFormat(att AttestationObject, clientDataHash []byte) (string, []in
 
 	// credentialPublicKey handled earlier
 
-	// Step 4. Convert the COSE_KEY formatted credentialPublicKey (see Section 7 of RFC8152 [https://www.w3.org/TR/webauthn-1/#biblio-rfc8152])
+	// Step 4. Convert the COSE_KEY formatted credentialPublicKey (see Section 7 of RFC8152 [https://www.w3.org/TR/webauthn/#biblio-rfc8152])
 	// to Raw ANSI X9.62 public key format (see ALG_KEY_ECC_X962_RAW in Section 3.6.2 Public Key
-	// Representation Formats of FIDO-Registry [https://www.w3.org/TR/webauthn-1/#biblio-fido-registry]).
+	// Representation Formats of FIDO-Registry [https://www.w3.org/TR/webauthn/#biblio-fido-registry]).
 
 	// Let x be the value corresponding to the "-2" key (representing x coordinate) in credentialPublicKey, and confirm
 	// its size to be of 32 bytes. If size differs or "-2" key is not found, terminate this algorithm and
@@ -115,7 +117,7 @@ func verifyU2FFormat(att AttestationObject, clientDataHash []byte) (string, []in
 	publicKeyU2F.Write(key.YCoord)
 
 	// Step 5. Let verificationData be the concatenation of (0x00 || rpIdHash || clientDataHash || credentialId || publicKeyU2F)
-	// (see §4.3 of FIDO-U2F-Message-Formats [https://www.w3.org/TR/webauthn-1/#biblio-fido-u2f-message-formats]).
+	// (see §4.3 of FIDO-U2F-Message-Formats [https://www.w3.org/TR/webauthn/#biblio-fido-u2f-message-formats]).
 
 	verificationData := bytes.NewBuffer([]byte{0x00})
 	verificationData.Write(rpIdHash)
@@ -123,12 +125,12 @@ func verifyU2FFormat(att AttestationObject, clientDataHash []byte) (string, []in
 	verificationData.Write(credentialID)
 	verificationData.Write(publicKeyU2F.Bytes())
 
-	// Step 6. Verify the sig using verificationData and certificate public key per SEC1[https://www.w3.org/TR/webauthn-1/#biblio-sec1].
+	// Step 6. Verify the sig using verificationData and certificate public key per SEC1[https://www.w3.org/TR/webauthn/#biblio-sec1].
 	sigErr := attCert.CheckSignature(x509.ECDSAWithSHA256, verificationData.Bytes(), signature)
 	if sigErr != nil {
 		return u2fAttestationKey, nil, sigErr
 	}
 
 	// Step 7. If successful, return attestation type Basic with the attestation trust path set to x5c.
-	return "Fido U2F Basic", x5c, sigErr
+	return string(metadata.BasicFull) /*"Fido U2F Basic"*/, x5c, sigErr
 }

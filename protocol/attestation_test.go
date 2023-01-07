@@ -19,7 +19,7 @@ func TestAttestationVerify(t *testing.T) {
 				t.Fatal(err)
 			}
 			var pcc ParsedCredentialCreationData
-			pcc.ID, pcc.RawID, pcc.Type = ccr.ID, ccr.RawID, ccr.Type
+			pcc.ID, pcc.RawID, pcc.Type, pcc.ClientExtensionResults = ccr.ID, ccr.RawID, ccr.Type, ccr.ClientExtensionResults
 			pcc.Raw = ccr
 
 			parsedAttestationResponse, err := ccr.AttestationResponse.Parse()
@@ -30,7 +30,7 @@ func TestAttestationVerify(t *testing.T) {
 			pcc.Response = *parsedAttestationResponse
 
 			// Test Base Verification
-			err = pcc.Verify(options.Response.Challenge.String(), false, options.Response.RelyingParty.ID, options.Response.RelyingParty.Name, nil, nil, nil)
+			err = pcc.Verify(options.Response.Challenge.String(), false, options.Response.RelyingParty.ID, []string{options.Response.RelyingParty.Name}, nil, nil, nil)
 			if err != nil {
 				t.Fatalf("Not valid: %+v (%+s)", err, err.(*Error).DevInfo)
 			}
@@ -52,7 +52,7 @@ func attestationTestUnpackResponse(t *testing.T, response string) ParsedCredenti
 		t.Fatal(err)
 	}
 	var pcc ParsedCredentialCreationData
-	pcc.ID, pcc.RawID, pcc.Type = ccr.ID, ccr.RawID, ccr.Type
+	pcc.ID, pcc.RawID, pcc.Type, pcc.ClientExtensionResults = ccr.ID, ccr.RawID, ccr.Type, ccr.ClientExtensionResults
 	pcc.Raw = ccr
 
 	parsedAttestationResponse, err := ccr.AttestationResponse.Parse()
@@ -66,7 +66,7 @@ func attestationTestUnpackResponse(t *testing.T, response string) ParsedCredenti
 }
 
 func TestPackedAttestationVerification(t *testing.T) {
-	t.Run(fmt.Sprintf("Testing Self Packed"), func(t *testing.T) {
+	t.Run("Testing Self Packed", func(t *testing.T) {
 		pcc := attestationTestUnpackResponse(t, testAttestationResponses[0])
 
 		// Test Packed Verification

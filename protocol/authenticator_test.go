@@ -184,9 +184,10 @@ func TestAuthenticatorData_unmarshalAttestedData(t *testing.T) {
 		rawAuthData []byte
 	}
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
 	}{
 		// TODO: Add test cases.
 	}
@@ -199,7 +200,9 @@ func TestAuthenticatorData_unmarshalAttestedData(t *testing.T) {
 				AttData:  tt.fields.AttData,
 				ExtData:  tt.fields.ExtData,
 			}
-			a.unmarshalAttestedData(tt.args.rawAuthData)
+			if err := a.unmarshalAttestedData(tt.args.rawAuthData); (err != nil) != tt.wantErr {
+				t.Errorf("AuthenticatorData.unmarshalAttestedData() error = %v, wantErr %v", err, tt.wantErr)
+			}
 		})
 	}
 }
@@ -217,7 +220,11 @@ func Test_unmarshalCredentialPublicKey(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := unmarshalCredentialPublicKey(tt.args.keyBytes); !reflect.DeepEqual(got, tt.want) {
+			got, err := unmarshalCredentialPublicKey(tt.args.keyBytes)
+
+			if err != nil {
+				t.Errorf("unmarshalCredentialPublicKey() returned err %v", err)
+			} else if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("unmarshalCredentialPublicKey() = %v, want %v", got, tt.want)
 			}
 		})
@@ -253,7 +260,7 @@ func TestAuthenticatorData_Verify(t *testing.T) {
 				AttData:  tt.fields.AttData,
 				ExtData:  tt.fields.ExtData,
 			}
-			if err := a.Verify(tt.args.rpIdHash, tt.args.userVerificationRequired); (err != nil) != tt.wantErr {
+			if err := a.Verify(tt.args.rpIdHash, nil, tt.args.userVerificationRequired); (err != nil) != tt.wantErr {
 				t.Errorf("AuthenticatorData.Verify() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

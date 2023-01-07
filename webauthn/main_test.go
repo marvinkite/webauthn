@@ -1,10 +1,11 @@
 package webauthn
 
 import (
-	"github.com/marvinkite/webauthn/metadata"
-	"github.com/marvinkite/webauthn/protocol"
 	"reflect"
 	"testing"
+
+	"github.com/marvinkite/webauthn/metadata"
+	"github.com/marvinkite/webauthn/protocol"
 )
 
 func TestValidateRpPolicy(t *testing.T) {
@@ -87,14 +88,15 @@ func TestValidateRpPolicy(t *testing.T) {
 
 type testMetadataService struct{}
 
-func (service *testMetadataService) WebAuthnAuthenticator(aaguid string) *metadata.MetadataStatement {
+func (service *testMetadataService) GetWebAuthnAuthenticator(aaguid string) *metadata.MetadataStatement {
 	return nil
 }
-func (service *testMetadataService) U2FAuthenticator(attestationCertificateKeyIdentifier string) *metadata.MetadataStatement {
+func (service *testMetadataService) GetU2FAuthenticator(attestationCertificateKeyIdentifier string) *metadata.MetadataStatement {
 	return nil
 }
 
 func TestConfigValidation(t *testing.T) {
+	falseValue := false
 	tests := []struct {
 		name        string
 		inputConfig *Config
@@ -107,6 +109,7 @@ func TestConfigValidation(t *testing.T) {
 				RPDisplayName:          "Test Relying Party",
 				RPID:                   "https://test.com",
 				RPOrigin:               "https://test.com",
+				RPOrigins:              []string{"https://test.com"},
 				RPIcon:                 "https://test.com/icon.png",
 				AttestationPreference:  "direct",
 				AuthenticatorSelection: protocol.AuthenticatorSelection{},
@@ -117,12 +120,16 @@ func TestConfigValidation(t *testing.T) {
 				Debug: false,
 			},
 			wantConfig: &Config{
-				RPDisplayName:          "Test Relying Party",
-				RPID:                   "https://test.com",
-				RPOrigin:               "https://test.com",
-				RPIcon:                 "https://test.com/icon.png",
-				AttestationPreference:  "direct",
-				AuthenticatorSelection: protocol.AuthenticatorSelection{},
+				RPDisplayName:         "Test Relying Party",
+				RPID:                  "https://test.com",
+				RPOrigin:              "https://test.com",
+				RPOrigins:             []string{"https://test.com", "https://test.com"},
+				RPIcon:                "https://test.com/icon.png",
+				AttestationPreference: "direct",
+				AuthenticatorSelection: protocol.AuthenticatorSelection{
+					RequireResidentKey: &falseValue,
+					UserVerification:   protocol.VerificationPreferred,
+				},
 				Timeouts: Timeouts{
 					Registration:   1000,
 					Authentication: 1000,
@@ -137,6 +144,7 @@ func TestConfigValidation(t *testing.T) {
 				RPDisplayName:          "Test Relying Party",
 				RPID:                   "test.com",
 				RPOrigin:               "",
+				RPOrigins:              []string{"https://test.com"},
 				RPIcon:                 "https://test.com/icon.png",
 				AttestationPreference:  "direct",
 				AuthenticatorSelection: protocol.AuthenticatorSelection{},
@@ -147,12 +155,16 @@ func TestConfigValidation(t *testing.T) {
 				Debug: false,
 			},
 			wantConfig: &Config{
-				RPDisplayName:          "Test Relying Party",
-				RPID:                   "test.com",
-				RPOrigin:               "test.com",
-				RPIcon:                 "https://test.com/icon.png",
-				AttestationPreference:  "direct",
-				AuthenticatorSelection: protocol.AuthenticatorSelection{},
+				RPDisplayName:         "Test Relying Party",
+				RPID:                  "test.com",
+				RPOrigin:              "",
+				RPOrigins:             []string{"https://test.com"},
+				RPIcon:                "https://test.com/icon.png",
+				AttestationPreference: "direct",
+				AuthenticatorSelection: protocol.AuthenticatorSelection{
+					RequireResidentKey: &falseValue,
+					UserVerification:   protocol.VerificationPreferred,
+				},
 				Timeouts: Timeouts{
 					Registration:   1000,
 					Authentication: 1000,
@@ -177,12 +189,16 @@ func TestConfigValidation(t *testing.T) {
 				Debug: false,
 			},
 			wantConfig: &Config{
-				RPDisplayName:          "Test Relying Party",
-				RPID:                   "https://test.com",
-				RPOrigin:               "https://test.com",
-				RPIcon:                 "https://test.com/icon.png",
-				AttestationPreference:  "direct",
-				AuthenticatorSelection: protocol.AuthenticatorSelection{},
+				RPDisplayName:         "Test Relying Party",
+				RPID:                  "https://test.com",
+				RPOrigin:              "https://test.com",
+				RPOrigins:             []string{"https://test.com"},
+				RPIcon:                "https://test.com/icon.png",
+				AttestationPreference: "direct",
+				AuthenticatorSelection: protocol.AuthenticatorSelection{
+					RequireResidentKey: &falseValue,
+					UserVerification:   protocol.VerificationPreferred,
+				},
 				Timeouts: Timeouts{
 					Registration:   60000,
 					Authentication: 60000,
@@ -207,12 +223,16 @@ func TestConfigValidation(t *testing.T) {
 				Debug: false,
 			},
 			wantConfig: &Config{
-				RPDisplayName:          "Test Relying Party",
-				RPID:                   "https://test.com/hanko/test",
-				RPOrigin:               "https://test.com",
-				RPIcon:                 "https://test.com/icon.png",
-				AttestationPreference:  "direct",
-				AuthenticatorSelection: protocol.AuthenticatorSelection{},
+				RPDisplayName:         "Test Relying Party",
+				RPID:                  "https://test.com/hanko/test",
+				RPOrigin:              "https://test.com",
+				RPOrigins:             []string{"https://test.com"},
+				RPIcon:                "https://test.com/icon.png",
+				AttestationPreference: "direct",
+				AuthenticatorSelection: protocol.AuthenticatorSelection{
+					RequireResidentKey: &falseValue,
+					UserVerification:   protocol.VerificationPreferred,
+				},
 				Timeouts: Timeouts{
 					Registration:   1000,
 					Authentication: 1000,

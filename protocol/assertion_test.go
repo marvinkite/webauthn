@@ -3,15 +3,16 @@ package protocol
 import (
 	"bytes"
 	"encoding/base64"
-	"github.com/marvinkite/webauthn/cbor_options"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"reflect"
 	"testing"
+
+	"github.com/marvinkite/webauthn/protocol/webauthncbor"
 )
 
 func TestParseCredentialRequestResponse(t *testing.T) {
-	reqBody := ioutil.NopCloser(bytes.NewReader([]byte(testAssertionResponses["success"])))
+	reqBody := io.NopCloser(bytes.NewReader([]byte(testAssertionResponses["success"])))
 	httpReq := &http.Request{Body: reqBody}
 
 	byteID, _ := base64.RawURLEncoding.DecodeString("AI7D5q2P0LS-Fal9ZT7CHM2N5BLbUunF92T8b6iYC199bO2kagSuU05-5dZGqb1SP0A0lyTWng")
@@ -93,8 +94,8 @@ func TestParseCredentialRequestResponse(t *testing.T) {
 				t.Errorf("ParseCredentialRequestResponse() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got.Extensions, tt.want.Extensions) {
-				t.Errorf("Extensions = %v \n want: %v", got, tt.want)
+			if !reflect.DeepEqual(got.ClientExtensionResults, tt.want.ClientExtensionResults) {
+				t.Errorf("ClientExtensionResults = %v \n want: %v", got, tt.want)
 			}
 			if !reflect.DeepEqual(got.ID, tt.want.ID) {
 				t.Errorf("ID = %v \n want: %v", got.ID, tt.want.ID)
@@ -103,7 +104,7 @@ func TestParseCredentialRequestResponse(t *testing.T) {
 				t.Errorf("ParsedCredential = %v \n want: %v", got, tt.want)
 			}
 			if !reflect.DeepEqual(got.ParsedPublicKeyCredential, tt.want.ParsedPublicKeyCredential) {
-				t.Errorf("ParsedPublicKeyCredential = %v \n want: %v", got.ParsedPublicKeyCredential.Extensions, tt.want.ParsedPublicKeyCredential.Extensions)
+				t.Errorf("ParsedPublicKeyCredential = %v \n want: %v", got.ParsedPublicKeyCredential.ClientExtensionResults, tt.want.ParsedPublicKeyCredential.ClientExtensionResults)
 			}
 			if !reflect.DeepEqual(got.Raw, tt.want.Raw) {
 				t.Errorf("Raw = %+v \n want: %+v", got.Raw, tt.want.Raw)
@@ -123,10 +124,10 @@ func TestParseCredentialRequestResponse(t *testing.T) {
 					// Unmarshall CredentialPublicKey
 					var pkWant interface{}
 					keyBytesWant := tt.want.Response.AuthenticatorData.AttData.CredentialPublicKey
-					cbor_options.CborDecMode.Unmarshal(keyBytesWant, &pkWant)
+					webauthncbor.Unmarshal(keyBytesWant, &pkWant)
 					var pkGot interface{}
 					keyBytesGot := got.Response.AuthenticatorData.AttData.CredentialPublicKey
-					cbor_options.CborDecMode.Unmarshal(keyBytesGot, &pkGot)
+					webauthncbor.Unmarshal(keyBytesGot, &pkGot)
 					if !reflect.DeepEqual(pkGot, pkWant) {
 						t.Errorf("Response = %+v \n want: %+v", pkGot, pkWant)
 					} else {
@@ -152,7 +153,7 @@ func TestParsedCredentialAssertionData_Verify(t *testing.T) {
 	type args struct {
 		storedChallenge    Challenge
 		relyingPartyID     string
-		relyingPartyOrigin string
+		relyingPartyOrigin []string
 		verifyUser         bool
 		credentialBytes    []byte
 	}
@@ -171,7 +172,8 @@ func TestParsedCredentialAssertionData_Verify(t *testing.T) {
 				Response:                  tt.fields.Response,
 				Raw:                       tt.fields.Raw,
 			}
-			if err := p.Verify(tt.args.storedChallenge.String(), tt.args.relyingPartyID, tt.args.relyingPartyOrigin, tt.args.verifyUser, tt.args.credentialBytes); (err != nil) != tt.wantErr {
+
+			if err := p.Verify(tt.args.storedChallenge.String(), tt.args.relyingPartyID, tt.args.relyingPartyOrigin, "", tt.args.verifyUser, tt.args.credentialBytes); (err != nil) != tt.wantErr {
 				t.Errorf("ParsedCredentialAssertionData.Verify() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

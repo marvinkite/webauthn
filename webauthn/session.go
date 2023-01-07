@@ -9,6 +9,7 @@ type SessionData struct {
 	UserID                  []byte                               `json:"user_id"`
 	AllowedCredentialIDs    [][]byte                             `json:"allowed_credentials,omitempty"`
 	UserVerification        protocol.UserVerificationRequirement `json:"userVerification"`
+	Extensions              protocol.AuthenticationExtensions    `json:"extensions,omitempty"`
 	ConveyancePreference    protocol.ConveyancePreference        `json:"conveyance_preference"`
 	AuthenticatorAttachment protocol.AuthenticatorAttachment     `json:"authenticator_attachment"`
 	Timeout                 int                                  `json:"timeout"`

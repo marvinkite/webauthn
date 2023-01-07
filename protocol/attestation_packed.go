@@ -22,22 +22,23 @@ func init() {
 	RegisterAttestationFormat(packedAttestationKey, verifyPackedFormat)
 }
 
-// From §8.2. https://www.w3.org/TR/webauthn-1/#packed-attestation
+// From §8.2. https://www.w3.org/TR/webauthn/#packed-attestation
 // The packed attestation statement looks like:
-//		packedStmtFormat = {
-//		 	alg: COSEAlgorithmIdentifier,
-//		 	sig: bytes,
-//		 	x5c: [ attestnCert: bytes, * (caCert: bytes) ]
-//		 } OR
-//		 {
-//		 	alg: COSEAlgorithmIdentifier, (-260 for ED256 / -261 for ED512)
-//		 	sig: bytes,
-//		 	ecdaaKeyId: bytes
-//		 } OR
-//		 {
-//		 	alg: COSEAlgorithmIdentifier
-//		 	sig: bytes,
-//		 }
+//
+//	packedStmtFormat = {
+//	 	alg: COSEAlgorithmIdentifier,
+//	 	sig: bytes,
+//	 	x5c: [ attestnCert: bytes, * (caCert: bytes) ]
+//	 } OR
+//	 {
+//	 	alg: COSEAlgorithmIdentifier, (-260 for ED256 / -261 for ED512)
+//	 	sig: bytes,
+//	 	ecdaaKeyId: bytes
+//	 } OR
+//	 {
+//	 	alg: COSEAlgorithmIdentifier
+//	 	sig: bytes,
+//	 }
 func verifyPackedFormat(att AttestationObject, clientDataHash []byte) (string, []interface{}, error) {
 	// Step 1. Verify that attStmt is valid CBOR conforming to the syntax defined
 	// above and perform CBOR decoding on it to extract the contained fields.
@@ -119,7 +120,7 @@ func handleBasicAttestation(signature, clientDataHash, authData, aaguid []byte, 
 	}
 
 	// Step 2.2 Verify that attestnCert meets the requirements in §8.2.1 Packed attestation statement certificate requirements.
-	// §8.2.1 can be found here https://www.w3.org/TR/webauthn-1/#packed-attestation-cert-requirements
+	// §8.2.1 can be found here https://www.w3.org/TR/webauthn/#packed-attestation-cert-requirements
 
 	// Step 2.2.1 (from §8.2.1) Version MUST be set to 3 (which is indicated by an ASN.1 INTEGER with value 2).
 	if attCert.Version != 3 {
@@ -202,13 +203,13 @@ func handleBasicAttestation(signature, clientDataHash, authData, aaguid []byte, 
 
 		if attCert.Subject.CommonName != attCert.Issuer.CommonName {
 			var hasBasicFull = false
-			for _, a := range meta.MetadataStatement.AttestationTypes {
-				if metadata.AuthenticatorAttestationType(a) == metadata.AuthenticatorAttestationType(metadata.BasicFull) {
-					hasBasicFull = true
-				}
-			}
+			// for _, a := range meta.MetadataStatement.AttestationTypes {
+			// 	if metadata.AuthenticatorAttestationTypeMap(a) == metadata.AuthenticatorAttestationType(metadata.BasicFull) {
+			// 		hasBasicFull = true
+			// 	}
+			// }
 			if !hasBasicFull {
-				return attestationType, x5c, ErrInvalidAttestation.WithDetails("Attestation with full attestation from authentictor that does not support full attestation")
+				return attestationType, x5c, ErrInvalidAttestation.WithDetails("Attestation with full attestation from authenticator that does not support full attestation")
 			}
 		}
 	} else {
@@ -223,14 +224,14 @@ func handleBasicAttestation(signature, clientDataHash, authData, aaguid []byte, 
 	}
 
 	// Note for 2.2.5 An Authority Information Access (AIA) extension with entry id-ad-ocsp and a CRL
-	// Distribution Point extension [RFC5280](https://www.w3.org/TR/webauthn-1/#biblio-rfc5280) are
+	// Distribution Point extension [RFC5280](https://www.w3.org/TR/webauthn/#biblio-rfc5280) are
 	// both OPTIONAL as the status of many attestation certificates is available through authenticator
 	// metadata services. See, for example, the FIDO Metadata Service
-	// [FIDOMetadataService] (https://www.w3.org/TR/webauthn-1/#biblio-fidometadataservice)
+	// [FIDOMetadataService] (https://www.w3.org/TR/webauthn/#biblio-fidometadataservice)
 
 	// Step 2.4 If successful, return attestation type Basic and attestation trust path x5c.
 	// We don't handle trust paths yet but we're done
-	return attestationType, x5c, nil
+	return string(metadata.BasicFull), x5c, nil
 }
 
 func handleECDAAAttesation(signature, clientDataHash, ecdaaKeyID []byte) (string, []interface{}, error) {
@@ -278,7 +279,7 @@ func handleSelfAttestation(alg int64, pubKey, authData, clientDataHash, signatur
 		return attestationType, nil, ErrInvalidAttestation.WithDetails("Unabled to verify signature")
 	}
 
-	return attestationType, nil, err
+	return string(metadata.BasicSurrogate) /* attestationType*/, nil, err
 }
 
 func verifyKeyAlgorithm(keyAlgorithm, attestedAlgorithm int64) error {

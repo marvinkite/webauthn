@@ -4,16 +4,20 @@ import (
 	"testing"
 
 	"bytes"
+
 	"github.com/marvinkite/webauthn/protocol"
 )
 
 func TestRegistration_FinishRegistrationFailure(t *testing.T) {
+	user := &defaultUser{
+		id: []byte("123"),
+	}
 	session := SessionData{
 		UserID: []byte("ABC"),
 	}
 
 	webauthn := &WebAuthn{}
-	credential, err := webauthn.FinishRegistration(session, nil)
+	credential, err := webauthn.FinishRegistration(user, session, nil)
 	if err == nil {
 		t.Errorf("FinishRegistration() error = nil, want %v", protocol.ErrBadRequest.Type)
 	}
@@ -92,7 +96,7 @@ func TestRegistration_BeginRegistrationAuthenticatorSelectionOption(t *testing.T
 
 	authenticatorSelection := protocol.AuthenticatorSelection{
 		AuthenticatorAttachment: protocol.AuthenticatorAttachment("platform"),
-		RequireResidentKey:      protocol.ResidentKeyUnrequired(),
+		RequireResidentKey:      protocol.ResidentKeyNotRequired(),
 		UserVerification:        protocol.VerificationRequired,
 	}
 

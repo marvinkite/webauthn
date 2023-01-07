@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/marvinkite/webauthn/metadata"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -102,7 +103,7 @@ func verifySafetyNetFormat(att AttestationObject, clientDataHash []byte) (string
 		return safetyNetAttestationKey, nil, ErrInvalidAttestation.WithDetails("Invalid nonce for in SafetyNet response")
 	}
 
-	// §8.5.4 Let attestationCert be the attestation certificate (https://www.w3.org/TR/webauthn-1/#attestation-certificate)
+	// §8.5.4 Let attestationCert be the attestation certificate (https://www.w3.org/TR/webauthn/#attestation-certificate)
 	certChain := token.Header["x5c"].([]interface{})
 	l := make([]byte, base64.StdEncoding.DecodedLen(len(certChain[0].(string))))
 	n, err := base64.StdEncoding.Decode(l, []byte(certChain[0].(string)))
@@ -133,6 +134,12 @@ func verifySafetyNetFormat(att AttestationObject, clientDataHash []byte) (string
 		// zero tolerance for post-dated timestamps
 		return "Basic attestation with SafetyNet", nil, ErrInvalidAttestation.WithDetails("SafetyNet response with timestamp after current time")
 	} else if t.Before(oneMinuteAgo) {
+		// allow old timestamp for testing purposes
+		// TODO: Make this user configurable
+		msg := "SafetyNet response with timestamp before one minute ago"
+		if metadata.Conformance {
+			return "", nil, ErrInvalidAttestation.WithDetails(msg)
+		}
 		return "Basic attestation with SafetyNet", nil, ErrInvalidAttestation.WithDetails("SafetyNet response with timestamp before one minute ago")
 	}
 
