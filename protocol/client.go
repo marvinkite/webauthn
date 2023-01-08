@@ -1,7 +1,7 @@
 package protocol
 
 import (
-"crypto/subtle"
+	"crypto/subtle"
 	"encoding/base64"
 	"fmt"
 	"net/url"
@@ -16,7 +16,7 @@ type CollectedClientData struct {
 	// Type the string "webauthn.create" when creating new credentials,
 	// and "webauthn.get" when getting an assertion from an existing credential. The
 	// purpose of this member is to prevent certain types of signature confusion attacks
-	//(where an attacker substitutes one legitimate signature for another).
+	// (where an attacker substitutes one legitimate signature for another).
 	Type         CeremonyType  `json:"type"`
 	Challenge    string        `json:"challenge"`
 	Origin       string        `json:"origin"`
@@ -51,9 +51,11 @@ const (
 	NotSupported TokenBindingStatus = "not-supported"
 )
 
+// FullyQualifiedOrigin returns the origin per the HTML spec: (scheme)://(host)[:(port)]
 // Returns the origin : (scheme)://(host)
-func FullyQualifiedOrigin(u *url.URL) string {
-	return strings.TrimSuffix(fmt.Sprintf("%s://%s", u.Scheme, u.Host), fmt.Sprintf(":%s", u.Port()))
+func FullyQualifiedOrigin(origin *url.URL) string {
+	// return strings.TrimSuffix(fmt.Sprintf("%s://%s", u.Scheme, u.Host), fmt.Sprintf(":%s", u.Port()))
+	return fmt.Sprintf("%s://%s", origin.Scheme, origin.Host)
 }
 
 // Handles steps 3 through 6 of verfying the registering client data of a
@@ -124,7 +126,7 @@ func (c *CollectedClientData) Verify(storedChallenge string, ceremony CeremonyTy
 
 	if !foundOriginMatch {
 		err := ErrVerification.WithDetails("Error validating origin")
-		return err.WithInfo(fmt.Sprintf("Expected Value list: %q\n Received: %s\n", relyingPartyOrigins, FullyQualifiedOrigin(clientDataOrigin)))
+		return err.WithInfo(fmt.Sprintf("Expected Value list: %q Received: %s", relyingPartyOrigins, FullyQualifiedOrigin(clientDataOrigin)))
 	}
 
 	// Registration Step 6 and Assertion Step 10. Verify that the value of C.tokenBinding.status
@@ -136,7 +138,9 @@ func (c *CollectedClientData) Verify(storedChallenge string, ceremony CeremonyTy
 			return ErrParsingData.WithDetails("Error decoding clientData, token binding present without status")
 		}
 		if c.TokenBinding.Status != Present && c.TokenBinding.Status != Supported && c.TokenBinding.Status != NotSupported {
-			return ErrParsingData.WithDetails("Error decoding clientData, token binding present with invalid status").WithInfo(fmt.Sprintf("Got: %s\n", c.TokenBinding.Status))
+			return ErrParsingData.
+				WithDetails("Error decoding clientData, token binding present with invalid status").
+				WithInfo(fmt.Sprintf("Got: %s", c.TokenBinding.Status))
 		}
 	}
 	// Not yet fully implemented by the spec, browsers, and me.

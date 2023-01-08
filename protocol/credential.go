@@ -12,7 +12,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/cloudflare/cfssl/scan/crypto/sha1"
+	"crypto/sha1"
+
 	"github.com/google/uuid"
 	"github.com/marvinkite/webauthn/credential"
 	"github.com/marvinkite/webauthn/metadata"
